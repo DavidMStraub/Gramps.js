@@ -11,9 +11,11 @@ import {sharedStyles} from '../SharedStyles.js'
 
 import {fireEvent, makeHandle, objectTypeToEndpoint} from '../util.js'
 import './GrampsjsObjectPickerDialog.js'
-// Circular import: the place form contains object selectors itself. This is
-// safe because both sides only use each other's tag names at render time.
+// Circular imports: the place and source forms contain object selectors
+// themselves. This is safe because both sides only use each other's tag names
+// at render time.
 import './GrampsjsFormNewPlace.js'
+import './GrampsjsFormNewSource.js'
 import './GrampsjsIcon.js'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
 
@@ -30,10 +32,12 @@ const btnLabel = {
 // labels for the create button, for the object types that support allowNew
 const newBtnLabel = {
   place: 'Add a new place',
+  source: 'Add a new source',
 }
 
 const newDialogTitle = {
   place: 'New Place',
+  source: 'New Source',
 }
 
 class GrampsjsFormSelectObject extends GrampsjsAppStateMixin(LitElement) {
@@ -141,6 +145,15 @@ class GrampsjsFormSelectObject extends GrampsjsAppStateMixin(LitElement) {
                 .appState="${this.appState}"
                 dialogTitle="${this._(newDialogTitle[this.objectType])}"
               ></grampsjs-form-new-place>
+            `
+          : ''}
+        ${this.objectType === 'source'
+          ? html`
+              <grampsjs-form-new-source
+                noReset
+                .appState="${this.appState}"
+                dialogTitle="${this._(newDialogTitle[this.objectType])}"
+              ></grampsjs-form-new-source>
             `
           : ''}
       </div>

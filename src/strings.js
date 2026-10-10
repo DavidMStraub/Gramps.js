@@ -92,6 +92,7 @@ export const grampsStrings = [
   'Add a new person',
   'Add a new place',
   'Add a new set of parents',
+  'Add a new source',
   'Add an existing person as a child of the family',
   'Add person as child to an existing family',
   'Add an existing repository',
