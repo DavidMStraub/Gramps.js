@@ -140,7 +140,7 @@ export const GrampsjsNewSourceMixin = superClass =>
       const name = this.shadowRoot.getElementById('source-name')
       name?.reportValidity()
       try {
-        this.isFormValid = name.validity.valid
+        this.isFormValid = name.validity.valid && !!name.value.trim()
       } catch {
         this.isFormValid = false
       }

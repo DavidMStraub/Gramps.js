@@ -66,6 +66,31 @@ describe('new source form: repository reference', () => {
   })
 })
 
+describe('new source form: title validity', () => {
+  const formWithTitle = value => {
+    const form = makeForm()
+    const field = document.createElement('div')
+    field.id = 'source-name'
+    field.value = value
+    field.validity = {valid: value !== ''}
+    field.reportValidity = () => {}
+    form.shadowRoot.appendChild(field)
+    return form
+  }
+
+  it('accepts a title', () => {
+    const form = formWithTitle('Census 1900')
+    form.checkFormValidity()
+    expect(form.isValid).toBe(true)
+  })
+
+  it('rejects a title of only spaces', () => {
+    const form = formWithTitle('   ')
+    form.checkFormValidity()
+    expect(form.isValid).toBe(false)
+  })
+})
+
 describe('object selector: new source', () => {
   const makeSelector = appState => {
     const element = document.createElement('grampsjs-form-select-object')
