@@ -11,6 +11,7 @@ import {
   replaceMediaRegion,
   removeMediaRegion,
   fireEvent,
+  fileWithMimeType,
 } from '../util.js'
 
 export class GrampsjsViewMedia extends GrampsjsViewObject {
@@ -194,7 +195,8 @@ export class GrampsjsViewMedia extends GrampsjsViewObject {
 
   _handleUploadFile(e) {
     const putUrl = `/api/media/${e.detail.handle}/file`
-    this.appState.apiPut(putUrl, e.detail.data, {isJson: false}).then(data => {
+    const file = fileWithMimeType(e.detail.data)
+    this.appState.apiPut(putUrl, file, {isJson: false}).then(data => {
       if ('data' in data) {
         this.error = false
         this._updateData()
