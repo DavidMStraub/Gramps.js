@@ -12,7 +12,7 @@ import {GrampsjsNewMediaMixin} from '../mixins/GrampsjsNewMediaMixin.js'
 
 import {GrampsjsViewNewObject} from './GrampsjsViewNewObject.js'
 
-import {emptyDate, fireEvent} from '../util.js'
+import {emptyDate, fileWithMimeType, fireEvent} from '../util.js'
 
 export class GrampsjsViewNewMedia extends GrampsjsNewMediaMixin(
   GrampsjsViewNewObject
@@ -445,10 +445,14 @@ export class GrampsjsViewNewMedia extends GrampsjsNewMediaMixin(
 
         // Step 1: Upload file
         // eslint-disable-next-line no-await-in-loop
-        const uploadData = await this.appState.apiPost(this.postUrl, file, {
-          isJson: false,
-          dbChanged: false,
-        })
+        const uploadData = await this.appState.apiPost(
+          this.postUrl,
+          fileWithMimeType(file),
+          {
+            isJson: false,
+            dbChanged: false,
+          }
+        )
 
         if ('error' in uploadData) {
           this.error = true

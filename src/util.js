@@ -707,6 +707,23 @@ export const filterMime = {
   'application/pdf': 'PDF',
 }
 
+// Geodata types that browsers often report as empty, text/xml,
+// application/json or application/zip. The backend takes the MIME type from
+// the upload's Content-Type and derives the stored file extension from it.
+const MIME_BY_EXTENSION = {
+  geojson: 'application/geo+json',
+  gpx: 'application/gpx+xml',
+  kml: 'application/vnd.google-earth.kml+xml',
+  kmz: 'application/vnd.google-earth.kmz',
+}
+
+export function fileWithMimeType(file) {
+  const extension = file.name.split('.').pop().toLowerCase()
+  const type = MIME_BY_EXTENSION[extension]
+  if (!type || file.type === type) return file
+  return new File([file], file.name, {type, lastModified: file.lastModified})
+}
+
 export const reportCategoryIcon = {
   0: 'description', // text
   1: 'pie_chart', // draw
