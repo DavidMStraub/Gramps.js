@@ -4,17 +4,22 @@ import {html, css, LitElement} from 'lit'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
 import {sharedStyles} from '../SharedStyles.js'
 
-import {clickKeyHandler, fireEvent} from '../util.js'
-import '@material/mwc-button'
+import {mdiLogout} from '@mdi/js'
+import {fireEvent} from '../util.js'
+import '@material/web/button/filled-button.js'
+import '@material/web/button/outlined-button.js'
+import './GrampsjsIcon.js'
 
-function renderLogoutButton(appState) {
+function renderLogoutButton(appState, _) {
   return html`
-    <mwc-button
-      outlined
-      label="logout"
-      icon="exit_to_app"
-      @click=${() => appState.signout()}
-    ></mwc-button>
+    <md-outlined-button @click=${() => appState.signout()}>
+      <grampsjs-icon
+        slot="icon"
+        .path="${mdiLogout}"
+        color="var(--md-outlined-button-label-text-color, var(--mdc-theme-primary))"
+      ></grampsjs-icon>
+      ${_('Log out')}
+    </md-outlined-button>
   `
 }
 
@@ -53,7 +58,7 @@ class GrampsjsUpgradeDb extends GrampsjsAppStateMixin(LitElement) {
         ${this._(
           'The Family Tree you are trying to load is in a schema version not supported by this version of Gramps Web. Therefore you cannot load this Family Tree until the tree administrator has upgraded its schema.'
         )}<br /><br />
-        ${renderLogoutButton(this.appState)}
+        ${renderLogoutButton(this.appState, this._.bind(this))}
       </div>
     </div>`
   }
@@ -64,11 +69,8 @@ class GrampsjsUpgradeDb extends GrampsjsAppStateMixin(LitElement) {
         ${this._(
           'The Family Tree you are trying to load is in a schema version not supported by this version of Gramps Web. Therefore you cannot load this Family Tree without upgrading its schema. This action cannot be undone.'
         )}<br /><br />
-        <mwc-button
-          raised
-          @click="${this._upgradeDb}"
-          @keydown="${clickKeyHandler}"
-          >${this._('Upgrade database')}</mwc-button
+        <md-filled-button @click="${this._upgradeDb}"
+          >${this._('Upgrade database')}</md-filled-button
         >
         <grampsjs-task-progress-indicator
           taskName="upgradeDb"
@@ -78,7 +80,7 @@ class GrampsjsUpgradeDb extends GrampsjsAppStateMixin(LitElement) {
           @task:complete="${this._handleUpgradeComplete}"
         ></grampsjs-task-progress-indicator>
         <br /><br />
-        ${renderLogoutButton(this.appState)}
+        ${renderLogoutButton(this.appState, this._.bind(this))}
       </div>
     </div>`
   }
