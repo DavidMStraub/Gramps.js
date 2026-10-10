@@ -35,6 +35,7 @@ class GrampsjsFormNewCitation extends GrampsjsObjectForm {
         style="min-height: 300px;"
         id="source"
         objectType="source"
+        allowNew
         .appState="${this.appState}"
       ></grampsjs-form-select-object-list>
 

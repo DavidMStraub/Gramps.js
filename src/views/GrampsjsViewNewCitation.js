@@ -34,6 +34,7 @@ export class GrampsjsViewNewCitation extends GrampsjsViewNewObject {
       <grampsjs-form-select-object-list
         id="source"
         objectType="source"
+        allowNew
         .appState="${this.appState}"
       ></grampsjs-form-select-object-list>
 
