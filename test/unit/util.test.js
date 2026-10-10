@@ -27,6 +27,7 @@ import {
   apiVersionAtLeast,
   linkUrls,
   isKeyEventInInput,
+  fileWithMimeType,
 } from '../../src/util.js'
 
 // Helpers
@@ -732,5 +733,32 @@ describe('isKeyEventInInput', () => {
     expect(
       isKeyEventInInput(keyEvent([element('A'), element('MD-LIST')]))
     ).to.equal(false)
+  })
+})
+
+describe('fileWithMimeType', () => {
+  it('sets the MIME type of geodata files from the extension', () => {
+    const cases = [
+      ['places.geojson', 'application/json', 'application/geo+json'],
+      ['track.GPX', '', 'application/gpx+xml'],
+      ['parish.kml', 'text/xml', 'application/vnd.google-earth.kml+xml'],
+      ['parish.kmz', 'application/zip', 'application/vnd.google-earth.kmz'],
+    ]
+    cases.forEach(([name, type, expected]) => {
+      const file = fileWithMimeType(new File(['x'], name, {type}))
+      expect(file.type).to.equal(expected)
+      expect(file.name).to.equal(name)
+    })
+  })
+
+  it('returns other files unchanged', () => {
+    const files = [
+      new File(['x'], 'photo.jpg', {type: 'image/jpeg'}),
+      new File(['x'], 'README', {type: ''}),
+      new File(['x'], 'parish.kml', {
+        type: 'application/vnd.google-earth.kml+xml',
+      }),
+    ]
+    files.forEach(file => expect(fileWithMimeType(file)).to.equal(file))
   })
 })
