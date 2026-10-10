@@ -167,7 +167,7 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
       capture: true,
       passive: true,
     })
-    window.addEventListener('keydown', this._boundKeyDown)
+    window.addEventListener('keydown', this._boundKeyDown, true)
   }
 
   disconnectedCallback() {
@@ -178,7 +178,7 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
     window.removeEventListener('db:changed', this._boundDbChanged)
     window.removeEventListener('pointerdown', this._boundOutsideInput, true)
     window.removeEventListener('wheel', this._boundOutsideInput, true)
-    window.removeEventListener('keydown', this._boundKeyDown)
+    window.removeEventListener('keydown', this._boundKeyDown, true)
     clearTimeout(this._showTimer)
     clearTimeout(this._hideTimer)
   }
@@ -259,8 +259,12 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
     this._hideNow()
   }
 
+  // Listens in the capture phase so that an Escape that closes a visible popup
+  // does nothing else, e.g. close the navigation drawer when it has focus.
   _handleKeyDown(e) {
-    if (e.key === 'Escape') this._hideNow()
+    if (e.key !== 'Escape') return
+    if (this._visible) e.stopPropagation()
+    this._hideNow()
   }
 
   _position(anchorRect) {
