@@ -45,7 +45,7 @@ export class GrampsjsChildren extends GrampsjsEditableList {
 
   row(obj, i) {
     const p = this.profile[i] || {}
-    const extPerson = this.extended.find(e => e.handle === obj.ref) || null
+    const extPerson = this.extended.find(e => e?.handle === obj.ref) || null
 
     const frel = obj.frel || 'Birth'
     const mrel = obj.mrel || 'Birth'
@@ -91,9 +91,11 @@ export class GrampsjsChildren extends GrampsjsEditableList {
   }
 
   _handleDelete() {
-    const obj = this.data[this._selectedIndex]
-    if (obj) {
-      fireEvent(this, 'edit:action', {action: 'delChildRef', handle: obj.ref})
+    if (this.data[this._selectedIndex]) {
+      fireEvent(this, 'edit:action', {
+        action: 'delChildRef',
+        index: this._selectedIndex,
+      })
     }
   }
 

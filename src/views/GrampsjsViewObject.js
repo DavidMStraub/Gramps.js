@@ -565,7 +565,12 @@ export class GrampsjsViewObject extends GrampsjsView {
         'person_ref_list'
       )
     } else if (e.detail.action === 'delNoteRef') {
-      this.delHandle(e.detail.handle, this._data, this._className, 'note_list')
+      this.delObjectByIndex(
+        e.detail.index,
+        this._data,
+        this._className,
+        'note_list'
+      )
     } else if (e.detail.action === 'delMediaRef') {
       this.delObjectByIndex(
         e.detail.index,
@@ -650,26 +655,18 @@ export class GrampsjsViewObject extends GrampsjsView {
         'alt_names'
       )
     } else if (e.detail.action === 'delChildRef') {
-      this.delObject(
-        e.detail.handle,
+      this.delObjectByIndex(
+        e.detail.index,
         this._data,
         this._className,
         'child_ref_list'
       )
     } else if (e.detail.action === 'delCitation') {
-      this.delHandle(
-        e.detail.handle,
+      this.delObjectByIndex(
+        e.detail.index,
         this._data,
         this._className,
         'citation_list'
-      )
-    } else if (e.detail.action === 'moveCitation') {
-      this.moveHandle(
-        e.detail.handle,
-        this._data,
-        this._className,
-        'citation_list',
-        e.detail.to
       )
     } else if (e.detail.action === 'updateProp') {
       this.updateProp(
@@ -781,23 +778,9 @@ export class GrampsjsViewObject extends GrampsjsView {
     }
   }
 
-  delObject(handle, obj, objType, prop) {
-    return this._updateObject(obj, objType, _obj => {
-      _obj[prop] = _obj[prop].filter(oRef => oRef.ref !== handle)
-      return _obj
-    })
-  }
-
   delObjectByIndex(index, obj, objType, prop) {
     return this._updateObject(obj, objType, _obj => {
       _obj[prop] = _obj[prop].filter((_el, ind) => ind !== index)
-      return _obj
-    })
-  }
-
-  delHandle(handle, obj, objType, prop) {
-    return this._updateObject(obj, objType, _obj => {
-      _obj[prop] = _obj[prop].filter(_handle => _handle !== handle)
       return _obj
     })
   }
@@ -904,14 +887,6 @@ export class GrampsjsViewObject extends GrampsjsView {
   }
 
   // move `handle` to index `to`
-  moveHandle(handle, obj, objType, prop, to) {
-    return this._updateObject(obj, objType, _obj => {
-      const i = (_obj[prop] || []).indexOf(handle)
-      _obj[prop] = moveTo(_obj[prop], i, to)
-      return _obj
-    })
-  }
-
   async _postObject(obj, objType) {
     const url = `/api/${objectTypeToEndpoint[objType]}/`
     return this.appState.apiPost(url, obj)
