@@ -135,7 +135,9 @@ export class GrampsjsViewSearch extends GrampsjsView {
 
       ${this.renderFilters()}
       ${this._totalCount === 0 ? html`<p>${this._('None')}</p>` : ''}
-      ${this._totalCount > 0 ? html`<p>Total: ${this._totalCount}</p>` : ''}
+      ${this._totalCount > 0
+        ? html`<p>${this._('Total')}: ${this._totalCount}</p>`
+        : ''}
       <grampsjs-search-result-list
         .data="${this._data}"
         .appState="${this.appState}"

@@ -915,6 +915,7 @@ export const grampsStrings = [
   'Top, left',
   'Top, Right',
   'Top',
+  'Total',
   'Total size of media objects',
   'Town',
   'Transcript',
