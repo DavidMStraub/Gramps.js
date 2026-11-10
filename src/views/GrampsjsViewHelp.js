@@ -47,8 +47,6 @@ export class GrampsjsViewHelp extends GrampsjsView {
   renderContent() {
     const docLang = this._getDocLang()
     return html`
-      <h2>${this._('Help')}</h2>
-
       <div>
         <h3>${this._('Documentation')}</h3>
         <div class="button-container">

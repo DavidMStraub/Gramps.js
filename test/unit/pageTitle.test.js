@@ -8,6 +8,15 @@ describe('pageTitleParts', () => {
     ])
   })
 
+  it('names the timeline and help pages', () => {
+    expect(pageTitleParts({page: 'timeline', pageId: ''})).toEqual([
+      {title: 'Timeline'},
+    ])
+    expect(pageTitleParts({page: 'help', pageId: ''})).toEqual([
+      {title: 'Help'},
+    ])
+  })
+
   it('puts list pages under Lists', () => {
     expect(pageTitleParts({page: 'people', pageId: ''})).toEqual([
       {title: 'Lists', href: '/people'},

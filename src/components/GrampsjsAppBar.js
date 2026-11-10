@@ -31,7 +31,6 @@ import './GrampsjsSearchBox.js'
 import {fireEvent} from '../util.js'
 import {getTreeName} from '../api.js'
 import {pageTitleParts, pageTitleDetail} from '../routing.js'
-import {isInside} from '../dialogTracking.js'
 import {sharedStyles, appBarIconButtonStyles} from '../SharedStyles.js'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
 
@@ -46,17 +45,6 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
           position: sticky;
           top: 0;
           z-index: 5;
-        }
-
-        /* md-dialog's scrim lies below the bar, so the bar dims itself while
-           a dialog elsewhere is open */
-        :host([dimmed])::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-color: var(--md-sys-color-scrim, #000);
-          opacity: 0.32;
-          pointer-events: none;
         }
 
         header {
@@ -304,7 +292,6 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
     // the search field fills the bar on small screens
     this._searching = false
     this._handleScroll = this._handleScroll.bind(this)
-    this._handleDialogsChanged = this._handleDialogsChanged.bind(this)
     this._focusSearch = this._focusSearch.bind(this)
     this._unreadCount = 0
     this._handleNotificationsChanged =
@@ -679,19 +666,11 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
     fireEvent(this, 'edit-mode:delete')
   }
 
-  // Dims the bar while a dialog outside it is open; dialogs inside the bar
-  // cover it with their own scrim
-  _handleDialogsChanged(event) {
-    const dimmed = event.detail.dialogs.some(dialog => !isInside(dialog, this))
-    this.toggleAttribute('dimmed', dimmed)
-  }
-
   connectedCallback() {
     super.connectedCallback()
     const existing = this.appState?.getNotifications?.() ?? []
     this._unreadCount = existing.filter(n => n?.read === false).length
     window.addEventListener('scroll', this._handleScroll, {passive: true})
-    window.addEventListener('dialogs:changed', this._handleDialogsChanged)
     window.addEventListener('search:focus', this._focusSearch)
     window.addEventListener(
       'notifications:changed',
@@ -705,7 +684,6 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
   disconnectedCallback() {
     super.disconnectedCallback()
     window.removeEventListener('scroll', this._handleScroll)
-    window.removeEventListener('dialogs:changed', this._handleDialogsChanged)
     window.removeEventListener('search:focus', this._focusSearch)
     window.removeEventListener(
       'notifications:changed',

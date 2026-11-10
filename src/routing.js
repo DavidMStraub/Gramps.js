@@ -96,6 +96,7 @@ export const PAGE_TITLES = {
   notes: 'Notes',
   medialist: 'Media',
   map: 'Map',
+  timeline: 'Timeline',
   tree: 'Family Tree',
   'dna-matches': 'DNA',
   'dna-chromosome': 'DNA',
@@ -113,6 +114,7 @@ export const PAGE_TITLES = {
   revision: 'Revisions',
   search: 'Search',
   settings: 'Settings',
+  help: 'Help',
   anniversaries: 'Anniversaries',
 }
 

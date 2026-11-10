@@ -45,10 +45,33 @@ class GrampsjsNavDrawer extends GrampsjsAppStateMixin(LitElement) {
           overflow-x: hidden;
           overflow-y: auto;
           background-color: var(--grampsjs-drawer-background-color);
+          transition: width 200ms cubic-bezier(0.2, 0, 0, 1);
         }
 
         :host([mode='rail']) .panel {
           width: var(--grampsjs-rail-width, 72px);
+        }
+
+        /* the header keeps its width while the panel collapses, so the tree
+           name is cut off and fades out instead of wrapping anew */
+        .panel .header {
+          width: var(--grampsjs-drawer-width, 256px);
+        }
+
+        .tree-name {
+          transition: opacity 150ms linear, visibility 150ms;
+        }
+
+        :host([mode='rail']) .tree-name {
+          opacity: 0;
+          visibility: hidden;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .panel,
+          .tree-name {
+            transition: none;
+          }
         }
 
         .panel,
@@ -153,11 +176,7 @@ class GrampsjsNavDrawer extends GrampsjsAppStateMixin(LitElement) {
         >
           <grampsjs-icon path="${mdiMenu}" color="currentColor"></grampsjs-icon>
         </md-icon-button>
-        ${rail
-          ? ''
-          : html`<span class="tree-name" title="${treeName}"
-              >${treeName}</span
-            >`}
+        <span class="tree-name" title="${treeName}">${treeName}</span>
       </div>
       <grampsjs-main-menu
         .appState="${this.appState}"

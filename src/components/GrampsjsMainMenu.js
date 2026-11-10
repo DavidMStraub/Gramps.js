@@ -140,9 +140,9 @@ class GrampsjsMainMenu extends GrampsjsAppStateMixin(LitElement) {
           position: relative;
           display: flex;
           align-items: center;
-          gap: 14px;
+          gap: 16px;
           height: 40px;
-          padding: 0 14px;
+          padding: 0 12px;
           border-radius: 8px;
           color: var(--md-sys-color-on-surface);
           text-decoration: none;
@@ -174,25 +174,19 @@ class GrampsjsMainMenu extends GrampsjsAppStateMixin(LitElement) {
         .label {
           overflow: hidden;
           text-overflow: ellipsis;
+          transition: opacity 150ms linear;
         }
 
-        :host([rail]) nav,
-        :host([rail]) .group {
-          align-items: center;
-        }
-
-        :host([rail]) nav {
-          padding: 8px 12px 12px 12px;
-        }
-
-        :host([rail]) a {
-          width: 48px;
-          padding: 0;
-          justify-content: center;
-        }
-
+        /* the rail is the same menu, as wide as an item's icon and padding,
+           so the drawer can animate between the two by its width alone */
         :host([rail]) .label {
-          display: none;
+          opacity: 0;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .label {
+            transition: none;
+          }
         }
       `,
     ]

@@ -1,4 +1,5 @@
 import '@material/web/progress/linear-progress.js'
+import './dialogBackdrop.js'
 import '@material/web/button/filled-button.js'
 import {mdiLogout} from '@mdi/js'
 import {LitElement, css, html} from 'lit'
