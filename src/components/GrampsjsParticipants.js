@@ -137,16 +137,23 @@ export class GrampsjsParticipants extends GrampsjsEditableList {
     })
   }
 
+  get _rowType() {
+    if (this.edit) {
+      return 'button'
+    }
+    return this.noLink ? 'text' : 'link'
+  }
+
   row(obj, i) {
+    const type = this._rowType
     return html`
       <md-list-item
-        type="${this.noLink && !this.edit ? 'text' : 'button'}"
+        type="${type}"
+        href="${type === 'link' ? `/${obj.path}` : ''}"
         class="${classMap({selected: this.edit && i === this._selectedIndex})}"
         @click="${() => {
           if (this.edit) {
             this._handleSelected(i)
-          } else if (!this.noLink) {
-            fireEvent(this, 'nav', {path: obj.path})
           }
         }}"
       >

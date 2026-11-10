@@ -4,7 +4,7 @@ import '@material/web/list/list-item'
 
 import '../components/GrampsjsTimedelta.js'
 import {GrampsjsConnectedComponent} from '../components/GrampsjsConnectedComponent.js'
-import {eventTitleFromProfile, fireEvent} from '../util.js'
+import {eventTitleFromProfile} from '../util.js'
 
 export class GrampsjsViewAnniversaries extends GrampsjsConnectedComponent {
   static get styles() {
@@ -84,8 +84,8 @@ export class GrampsjsViewAnniversaries extends GrampsjsConnectedComponent {
     }
     return html`
       <md-list-item
-        type="button"
-        @click="${() => this._handleClick(event)}"
+        type="link"
+        href="/event/${event.gramps_id}"
         @keydown="${this._handleKeyDown}"
       >
         <span slot="headline"
@@ -121,11 +121,6 @@ export class GrampsjsViewAnniversaries extends GrampsjsConnectedComponent {
       this._boundHandleVisibility
     )
     super.disconnectedCallback()
-  }
-
-  _handleClick(event) {
-    const path = `event/${event.gramps_id}`
-    fireEvent(this, 'nav', {path})
   }
 
   // eslint-disable-next-line class-methods-use-this

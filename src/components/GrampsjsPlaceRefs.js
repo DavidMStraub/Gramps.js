@@ -35,13 +35,14 @@ export class GrampsjsPlaceRefs extends GrampsjsEditableList {
     const dateStr = this.profile[i]?.date_str || ''
     return html`
       <md-list-item
-        type="button"
+        type="${this.edit || !place?.gramps_id ? 'button' : 'link'}"
+        href="${this.edit || !place?.gramps_id
+          ? ''
+          : `/place/${place.gramps_id}`}"
         class="${classMap({selected: i === this._selectedIndex})}"
         @click="${() => {
           if (this.edit) {
             this._handleSelected(i)
-          } else {
-            this._handleClick(place?.gramps_id)
           }
         }}"
       >
@@ -86,12 +87,6 @@ export class GrampsjsPlaceRefs extends GrampsjsEditableList {
     return `/api/places/${handle}?locale=${
       this.appState.i18n.lang || 'en'
     }&profile=self`
-  }
-
-  _handleClick(grampsId) {
-    if (grampsId) {
-      fireEvent(this, 'nav', {path: `place/${grampsId}`})
-    }
   }
 
   _handleShare() {

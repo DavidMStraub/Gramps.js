@@ -260,8 +260,7 @@ export class GrampsjsViewRevision extends GrampsjsView {
       <div id="detail-buttons">
         ${objectType && grampsId
           ? html`
-              <md-text-button
-                @click="${() => this._handleOpenObject(objectType, grampsId)}"
+              <md-text-button href="/${objectType}/${grampsId}"
                 >${renderIconSvg(
                   mdiOpenInNew,
                   '--md-sys-color-primary',
@@ -283,10 +282,6 @@ export class GrampsjsViewRevision extends GrampsjsView {
         .appState="${this.appState}"
       ></grampsjs-diff-json>
     `
-  }
-
-  _handleOpenObject(objectType, grampsId) {
-    fireEvent(this, 'nav', {path: `${objectType}/${grampsId}`})
   }
 
   _handleCloseDetail() {

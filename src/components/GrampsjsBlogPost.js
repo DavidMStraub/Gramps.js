@@ -137,7 +137,7 @@ export class GrampsjsBlogPost extends GrampsjsAppStateMixin(LitElement) {
 
             <md-text-button
               id="btn-details"
-              @click="${() => this._clickDetails(this.source.gramps_id)}"
+              href="/source/${this.source.gramps_id}"
               >${this._('Details')}</md-text-button
             >
           </div>
@@ -154,16 +154,6 @@ export class GrampsjsBlogPost extends GrampsjsAppStateMixin(LitElement) {
     const {note} = this
     const inlineMedia = await fetchInlineMedia(this.appState, note?.text)
     if (note === this.note) this._inlineMedia = inlineMedia
-  }
-
-  _clickDetails(grampsId) {
-    this.dispatchEvent(
-      new CustomEvent('nav', {
-        bubbles: true,
-        composed: true,
-        detail: {path: `source/${grampsId}`},
-      })
-    )
   }
 
   _renderImage() {

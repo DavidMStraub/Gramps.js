@@ -25,18 +25,17 @@ export class GrampsjsRepositories extends GrampsjsEditableList {
   }
 
   row(obj, i) {
+    const grampsId = this.extended[i]?.gramps_id
     return html`
       <md-list-item
-        type="button"
+        type="${this.edit || !grampsId ? 'button' : 'link'}"
+        href="${this.edit || !grampsId
+          ? ''
+          : `/${this._getItemPath(grampsId)}`}"
         class="${classMap({selected: i === this._selectedIndex})}"
         @click="${() => {
           if (this.edit) {
             this._handleSelected(i)
-          } else {
-            const grampsId = this.extended[i]?.gramps_id
-            if (grampsId) {
-              this._handleClick(grampsId)
-            }
           }
         }}"
       >
@@ -123,12 +122,6 @@ export class GrampsjsRepositories extends GrampsjsEditableList {
       action: 'delRepository',
       handle: this._selectedIndex,
     })
-  }
-
-  _handleClick(grampsId) {
-    if (!this.edit) {
-      fireEvent(this, 'nav', {path: this._getItemPath(grampsId)})
-    }
   }
 
   // eslint-disable-next-line class-methods-use-this

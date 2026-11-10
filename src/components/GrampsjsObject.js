@@ -555,31 +555,19 @@ export class GrampsjsObject extends GrampsjsAppStateMixin(LitElement) {
     const ref = this.data.media_list[0]
     const obj = this.data.extended.media[0]
     return html`
-      <grampsjs-img
-        handle="${obj.handle}"
-        size="200"
-        displayHeight="200"
-        .rect="${ref.rect || []}"
-        square
-        circle
-        mime="${obj.mime}"
-        checksum="${obj.checksum}"
-        @click="${() => this._handleImgClick(obj.gramps_id)}"
-        class="link"
-      ></grampsjs-img>
+      <a href="/media/${obj.gramps_id}" aria-label="${this._('Media Object')}">
+        <grampsjs-img
+          handle="${obj.handle}"
+          size="200"
+          displayHeight="200"
+          .rect="${ref.rect || []}"
+          square
+          circle
+          mime="${obj.mime}"
+          checksum="${obj.checksum}"
+        ></grampsjs-img>
+      </a>
     `
-  }
-
-  _handleImgClick(grampsId) {
-    this.dispatchEvent(
-      new CustomEvent('nav', {
-        bubbles: true,
-        composed: true,
-        detail: {
-          path: `media/${grampsId}`,
-        },
-      })
-    )
   }
 
   renderSections() {

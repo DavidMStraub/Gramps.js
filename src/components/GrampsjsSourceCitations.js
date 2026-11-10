@@ -16,15 +16,15 @@ export class GrampsjsSourceCitations extends GrampsjsEditableList {
   }
 
   row(obj, i) {
+    const isLink = !this.edit && obj.gramps_id !== this.grampsId
     return html`
       <md-list-item
-        type="button"
+        type="${isLink ? 'link' : 'button'}"
+        href="${isLink ? `/${this._getItemPath(obj.gramps_id)}` : ''}"
         class="${classMap({selected: i === this._selectedIndex})}"
         @click="${() => {
           if (this.edit) {
             this._handleSelected(i)
-          } else {
-            this._handleClick(obj.gramps_id)
           }
         }}"
       >
@@ -33,18 +33,6 @@ export class GrampsjsSourceCitations extends GrampsjsEditableList {
         ${renderIcon({object: obj, object_type: 'citation'}, 'start')}
       </md-list-item>
     `
-  }
-
-  _handleClick(grampsId) {
-    if (!this.edit && grampsId && grampsId !== this.grampsId) {
-      this.dispatchEvent(
-        new CustomEvent('nav', {
-          bubbles: true,
-          composed: true,
-          detail: {path: this._getItemPath(grampsId)},
-        })
-      )
-    }
   }
 
   // eslint-disable-next-line class-methods-use-this

@@ -2,7 +2,6 @@ import {html} from 'lit'
 import {classMap} from 'lit/directives/class-map.js'
 
 import {GrampsjsEditableList} from './GrampsjsEditableList.js'
-import {fireEvent} from '../util.js'
 import {renderIcon} from '../objectRender.js'
 
 export class GrampsjsCitations extends GrampsjsEditableList {
@@ -14,13 +13,12 @@ export class GrampsjsCitations extends GrampsjsEditableList {
   row(obj, i) {
     return html`
       <md-list-item
-        type="button"
+        type="${this.edit ? 'button' : 'link'}"
+        href="${this.edit ? '' : `/${this._getItemPath(obj.gramps_id)}`}"
         class="${classMap({selected: i === this._selectedIndex})}"
         @click="${() => {
           if (this.edit) {
             this._handleSelected(i)
-          } else {
-            this._handleClick(obj.gramps_id)
           }
         }}"
       >
@@ -29,12 +27,6 @@ export class GrampsjsCitations extends GrampsjsEditableList {
         ${renderIcon({object: obj, object_type: 'citation'}, 'start')}
       </md-list-item>
     `
-  }
-
-  _handleClick(grampsId) {
-    if (!this.edit) {
-      fireEvent(this, 'nav', {path: this._getItemPath(grampsId)})
-    }
   }
 
   // eslint-disable-next-line class-methods-use-this

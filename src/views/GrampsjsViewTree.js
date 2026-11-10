@@ -179,6 +179,7 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
           color: var(--grampsjs-body-font-color);
           font: inherit;
           text-align: left;
+          text-decoration: none;
           cursor: pointer;
         }
 
@@ -634,7 +635,7 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
   }
 
   // The selected person, with the avatar of person lists, their name in the
-  // chart's name display format and their Gramps ID, as a button that opens
+  // chart's name display format and their Gramps ID, as a link to
   // their page
   renderSelectedPerson() {
     const profile = this._selectedPerson?.profile
@@ -643,10 +644,10 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
     }
     const name = formatChartName(profile, this.settingValues.nameDisplayFormat)
     return html`
-      <button
+      <a
         id="selected-person"
+        href="/${this._selectedPersonPath}"
         aria-label="${this._('Person Details')}: ${name}"
-        @click=${this._goToPerson}
       >
         <span class="avatar"
           >${renderPersonAvatar(this._selectedPerson, profile.sex)}</span
@@ -662,7 +663,7 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
           height="20"
           width="20"
         ></grampsjs-icon>
-      </button>
+      </a>
       <grampsjs-tooltip for="selected-person" .appState="${this.appState}"
         >${this._('Person Details')}</grampsjs-tooltip
       >
@@ -1014,11 +1015,8 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
     }
   }
 
-  // Opens the page of the person shown below the controls bar, who is the
-  // previous person while a newly selected person is loading
-  _goToPerson() {
-    const grampsId = this._selectedPerson?.gramps_id ?? this.grampsId
-    fireEvent(this, 'nav', {path: `person/${grampsId}`})
+  get _selectedPersonPath() {
+    return `person/${this._selectedPerson?.gramps_id ?? this.grampsId}`
   }
 
   // Shows a person selected in a chart or elsewhere, such as on a person's

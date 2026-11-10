@@ -1,12 +1,7 @@
 import {html} from 'lit'
 
 import {GrampsjsEditableList} from './GrampsjsEditableList.js'
-import {
-  fireEvent,
-  objectDescription,
-  objectDetail,
-  objectTypePlural,
-} from '../util.js'
+import {objectDescription, objectDetail, objectTypePlural} from '../util.js'
 import {renderIcon} from '../objectRender.js'
 
 export class GrampsjsReferences extends GrampsjsEditableList {
@@ -53,8 +48,8 @@ export class GrampsjsReferences extends GrampsjsEditableList {
               ).trim()
               return html`
                 <md-list-item
-                  type="button"
-                  @click="${() => this._handleClick(type, obj.gramps_id)}"
+                  type="link"
+                  href="/${this._getItemPath(type, obj.gramps_id)}"
                 >
                   <span>${desc}</span>
                   <span slot="supporting-text">${detail || obj.gramps_id}</span>
@@ -66,10 +61,6 @@ export class GrampsjsReferences extends GrampsjsEditableList {
         `
       )}
     `
-  }
-
-  _handleClick(type, grampsId) {
-    fireEvent(this, 'nav', {path: this._getItemPath(type, grampsId)})
   }
 
   // eslint-disable-next-line class-methods-use-this

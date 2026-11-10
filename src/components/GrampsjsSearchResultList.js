@@ -160,9 +160,11 @@ export class GrampsjsSearchResultList extends GrampsjsAppStateMixin(
             obj.object,
             this.appState.i18n.strings
           )
+          const path = this._getPath(obj)
           return html`
             <md-list-item
-              type="${this.selectable || this.linked ? 'button' : 'text'}"
+              type="${this._itemType}"
+              href="${path ? `/${path}` : ''}"
               class="${classMap({
                 selected: this.activatable && i === this._selectedIndex,
               })}"
@@ -204,12 +206,11 @@ export class GrampsjsSearchResultList extends GrampsjsAppStateMixin(
   }
 
   renderLoading() {
-    const type = this.selectable || this.linked ? 'button' : 'text'
     return html`
       <md-list>
         ${Array(this.numberLoading).fill(
           html`
-            <md-list-item type="${type}">
+            <md-list-item type="${this._itemType}">
               <span class="skeleton" style="width:15em;">&nbsp;</span>
               <span slot="supporting-text" class="skeleton" style="width:10em;"
                 >&nbsp;</span
@@ -256,14 +257,32 @@ export class GrampsjsSearchResultList extends GrampsjsAppStateMixin(
     })
   }
 
+  // The type of all items of the list
+  get _itemType() {
+    if (this.linked) {
+      return 'link'
+    }
+    return this.selectable ? 'button' : 'text'
+  }
+
+  // The path of the page of the object, if the list links to it. An item can
+  // set the path itself with `path`.
+  _getPath(obj) {
+    if (!this.linked) {
+      return ''
+    }
+    if (obj.path) {
+      return obj.path
+    }
+    return obj.object_type && obj.object?.gramps_id
+      ? `${obj.object_type}/${obj.object.gramps_id}`
+      : ''
+  }
+
   _handleClick(obj, i) {
     if (this.activatable) {
       this._selectedIndex = i
       fireEvent(this, 'action', {index: i})
-    }
-    if (this.linked && obj.object_type && obj.object?.gramps_id) {
-      const path = `${obj.object_type}/${obj.object?.gramps_id}`
-      fireEvent(this, 'nav', {path})
     }
     fireEvent(this, 'search-result:clicked', obj)
   }

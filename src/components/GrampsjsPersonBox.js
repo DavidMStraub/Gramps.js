@@ -139,7 +139,7 @@ export class GrampsjsPersonBox extends GrampsjsConnectedComponent {
           `
         : ''}
       <div class="right">
-        <md-text-button @click="${this._handleDetailClick}"
+        <md-text-button href="/person/${person.gramps_id}"
           >${this._('Show Details')}</md-text-button
         >
       </div>
@@ -154,11 +154,6 @@ export class GrampsjsPersonBox extends GrampsjsConnectedComponent {
       <span class="skeleton skeleton-text" style="width:60%">&nbsp;</span>
       <span class="skeleton skeleton-text" style="width:80%">&nbsp;</span>
     `
-  }
-
-  _handleDetailClick() {
-    const id = (this.personData || this._data?.data)?.gramps_id
-    if (id) fireEvent(this, 'nav', {path: `person/${id}`})
   }
 
   _handlePlaceHover(e) {

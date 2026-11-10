@@ -223,6 +223,9 @@ export class GrampsjsViewObjectsBase extends GrampsjsStaleDataMixin(
               sortDescriptor="${this._sort}"
               breakPoint="${this._tableBreakPoint}"
               .appState="${this.appState}"
+              .rowHrefs="${this._data.map(
+                item => `/${this._getItemPath(item)}`
+              )}"
               @table:row-click="${this._handleTableRowClick}"
               @table:sort-changed="${this._handleTableSortChanged}"
               @selection:changed="${this._handleSelectionChanged}"

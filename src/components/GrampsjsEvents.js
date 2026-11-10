@@ -80,13 +80,12 @@ export class GrampsjsEvents extends GrampsjsEditableList {
     const typeKey = typeof obj.type === 'string' ? obj.type : obj.type?.value
     return html`
       <md-list-item
-        type="button"
+        type="${this.edit ? 'button' : 'link'}"
+        href="${this.edit ? '' : `/${this._getItemPath(obj.gramps_id)}`}"
         class="${classMap({selected: i === this._selectedIndex})}"
         @click="${() => {
           if (this.edit) {
             this._handleSelected(i)
-          } else {
-            this._handleClick(obj.gramps_id)
           }
         }}"
         @mouseenter="${() =>
@@ -305,12 +304,6 @@ export class GrampsjsEvents extends GrampsjsEditableList {
       action: 'delEvent',
       index: this._selectedIndex,
     })
-  }
-
-  _handleClick(grampsId) {
-    if (!this.edit) {
-      fireEvent(this, 'nav', {path: this._getItemPath(grampsId)})
-    }
   }
 
   // eslint-disable-next-line class-methods-use-this

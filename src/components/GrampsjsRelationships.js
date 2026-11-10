@@ -423,7 +423,7 @@ export class GrampsjsRelationships extends GrampsjsAppStateMixin(LitElement) {
   _renderFamilyBtn(grampsId, family) {
     return html` <md-outlined-button
       class="familybtn"
-      @click="${() => this._handleButtonClick(grampsId)}"
+      href="/family/${grampsId}"
     >
       <grampsjs-icon
         path="${mdiAccountMultiple}"
@@ -433,18 +433,6 @@ export class GrampsjsRelationships extends GrampsjsAppStateMixin(LitElement) {
       ${this._('Family')}
       ${renderPrivacyIcon(rowPrivacy(family), this.appState)}
     </md-outlined-button>`
-  }
-
-  _handleButtonClick(grampsId) {
-    this.dispatchEvent(
-      new CustomEvent('nav', {
-        bubbles: true,
-        composed: true,
-        detail: {
-          path: `family/${grampsId}`,
-        },
-      })
-    )
   }
 
   // the family object of a family profile

@@ -27,13 +27,14 @@ export class GrampsjsAssociations extends GrampsjsEditableList {
   row(obj, i) {
     return html`
       <md-list-item
-        type="button"
+        type="${this.edit ? 'button' : 'link'}"
+        href="${this.edit
+          ? ''
+          : `/${this._getItemPath(this.extended[i]?.gramps_id)}`}"
         class="${classMap({selected: i === this._selectedIndex})}"
         @click="${() => {
           if (this.edit) {
             this._handleSelected(i)
-          } else {
-            this._handleClick(this.extended[i])
           }
         }}"
         >${personDisplayName(this.extended[i])}
@@ -46,12 +47,6 @@ export class GrampsjsAssociations extends GrampsjsEditableList {
         ></grampsjs-icon>
       </md-list-item>
     `
-  }
-
-  _handleClick(obj) {
-    if (!this.edit) {
-      fireEvent(this, 'nav', {path: this._getItemPath(obj.gramps_id)})
-    }
   }
 
   // eslint-disable-next-line class-methods-use-this
