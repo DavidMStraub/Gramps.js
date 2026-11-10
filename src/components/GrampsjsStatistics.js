@@ -1,82 +1,147 @@
-import {html, css} from 'lit'
+/*
+The number of objects of each type in the tree, as a table whose rows lead
+to the lists
+*/
 
-import {classMap} from 'lit/directives/class-map.js'
-import {GrampsjsTableBase} from './GrampsjsTableBase.js'
-import {fireEvent} from '../util.js'
+import {LitElement, html, css} from 'lit'
 
-const _classes = [
-  'people',
-  'families',
-  'events',
-  'places',
-  'sources',
-  'citations',
-  'repositories',
-  'notes',
-  'media',
-  // 'tags'
+import {sharedStyles} from '../SharedStyles.js'
+import {objectIconPath} from '../util.js'
+import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
+import './GrampsjsIcon.js'
+
+// [key in the object counts, icon, list path, label]
+const TYPES = [
+  ['people', 'person', 'people', 'People'],
+  ['families', 'family', 'families', 'Families'],
+  ['events', 'event', 'events', 'Events'],
+  ['places', 'place', 'places', 'Places'],
+  ['sources', 'source', 'sources', 'Sources'],
+  ['citations', 'citation', 'citations', 'Citations'],
+  ['repositories', 'repository', 'repositories', 'Repositories'],
+  ['notes', 'note', 'notes', 'Notes'],
+  ['media', 'media', 'medialist', 'Media'],
 ]
 
-export class GrampsjsStatistics extends GrampsjsTableBase {
+export class GrampsjsStatistics extends GrampsjsAppStateMixin(LitElement) {
   static get styles() {
     return [
-      super.styles,
+      sharedStyles,
       css`
         :host {
-          margin-bottom: 5em;
+          display: block;
         }
 
-        th,
+        table {
+          width: 100%;
+          margin: 0 0 8px 0;
+          border-collapse: collapse;
+        }
+
+        tr {
+          position: relative;
+        }
+
+        tr:hover td {
+          background-color: var(--grampsjs-body-font-color-5);
+        }
+
         td {
-          border-bottom: none;
-          padding-top: 6px;
-          padding-bottom: 6px;
-          padding-left: 10px;
-          padding-right: 10px;
+          padding: 8px 16px;
         }
 
-        th {
-          text-align: left;
+        td:first-child {
+          border-radius: 8px 0 0 8px;
         }
 
-        td {
-          font-size: 1.2em;
+        td:last-child {
+          border-radius: 0 8px 8px 0;
+        }
+
+        td.label a,
+        td.label a:link,
+        td.label a:visited,
+        td.label a:hover {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          color: var(--grampsjs-body-font-color);
+          text-decoration: none;
+          outline: none;
+        }
+
+        /* the link covers the whole row */
+        td.label a::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 8px;
+        }
+
+        td.label a:focus-visible::after {
+          outline: 2px solid var(--md-sys-color-primary);
+          outline-offset: -2px;
+        }
+
+        td.label grampsjs-icon {
+          flex: none;
+          color: var(--grampsjs-text-secondary-color);
+        }
+
+        td.number {
           text-align: right;
-          color: var(--grampsjs-body-font-color-70);
-          font-weight: 450;
+          font-weight: var(--grampsjs-font-weight-medium);
+          font-variant-numeric: tabular-nums;
         }
       `,
     ]
   }
 
+  static get properties() {
+    return {
+      data: {type: Object},
+    }
+  }
+
+  constructor() {
+    super()
+    this.data = {}
+  }
+
   render() {
+    const format = this._numberFormat()
     return html`
       <h3>${this._('Statistics')}</h3>
       <table>
-        ${_classes.map(key => {
-          if (!(key in this.data)) {
-            return ''
-          }
-          return html`
-            <tr
-              class="${classMap({link: key !== 'tags'})}"
-              @click=${() => this._handleClick(key)}
-            >
-              <td>${this.data[key]}</td>
-              <th>${this._(key.charAt(0).toUpperCase() + key.slice(1))}</th>
+        ${TYPES.filter(([key]) => key in this.data).map(
+          ([key, icon, path, label]) => html`
+            <tr>
+              <td class="label">
+                <a href="/${path}">
+                  <grampsjs-icon
+                    path="${objectIconPath[icon]}"
+                    color="currentColor"
+                    height="20"
+                    width="20"
+                  ></grampsjs-icon>
+                  ${this._(label)}
+                </a>
+              </td>
+              <td class="number">${format.format(this.data[key])}</td>
             </tr>
           `
-        }, this)}
+        )}
       </table>
     `
   }
 
-  _handleClick(key) {
-    if (key !== 'tags') {
-      // we don't have a tag list
-      // media is the only case that needs special treatment
-      const path = key === 'media' ? 'medialist' : key
-      fireEvent(this, 'nav', {path})
+  // Gramps language codes such as pt_BR become the BCP 47 tag pt-BR
+  _numberFormat() {
+    const lang = (this.appState?.i18n?.lang || '').replace('_', '-')
+    try {
+      return new Intl.NumberFormat(lang || undefined)
+    } catch {
+      return new Intl.NumberFormat()
     }
   }
 }

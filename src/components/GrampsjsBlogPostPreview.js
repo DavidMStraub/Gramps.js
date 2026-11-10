@@ -16,12 +16,11 @@ export class GrampsjsBlogPostPreview extends GrampsjsAppStateMixin(LitElement) {
         h3 {
           font-family: var(--grampsjs-heading-font-family);
           font-size: 20px;
-          margin-bottom: 20px;
-          font-weight: 400;
+          margin-bottom: 8px;
+          font-weight: var(--grampsjs-font-weight-heading);
           margin-top: 0;
           line-height: 1.3em;
-          min-height: 2.6em;
-          color: var(--grampsjs-body-font-color-75);
+          color: var(--grampsjs-body-font-color);
         }
 
         #image {
@@ -33,17 +32,17 @@ export class GrampsjsBlogPostPreview extends GrampsjsAppStateMixin(LitElement) {
         #note {
           flex-grow: 1;
           font-size: 17px;
-          font-weight: 300;
-          color: var(--grampsjs-body-font-color-70);
+          font-weight: var(--grampsjs-font-weight-body);
+          color: var(--grampsjs-body-font-color);
           line-height: 1.45em;
         }
 
         #date {
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
           font-size: 14px;
           letter-spacing: 0.02em;
-          margin: 2em 0;
-          font-weight: 250;
+          margin: 12px 0 0 0;
+          font-weight: var(--grampsjs-font-weight-body);
         }
 
         .clear {
@@ -52,6 +51,7 @@ export class GrampsjsBlogPostPreview extends GrampsjsAppStateMixin(LitElement) {
 
         #content {
           display: flex;
+          gap: 16px;
         }
 
         @media (max-width: 500px) {

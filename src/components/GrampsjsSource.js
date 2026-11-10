@@ -1,6 +1,6 @@
 import {html} from 'lit'
 
-import '@material/web/button/outlined-button'
+import '@material/web/button/filled-tonal-button.js'
 import '@material/web/iconbutton/icon-button.js'
 
 import {mdiPencil} from '@mdi/js'
@@ -89,9 +89,9 @@ export class GrampsjsSource extends GrampsjsObject {
     }
     if (this.preview) return ''
     return html` <p style="clear: both; padding-top: 1em;">
-      <md-outlined-button href="/blog/${this.data.gramps_id}">
+      <md-filled-tonal-button href="/blog/${this.data.gramps_id}">
         ${this._('Show in blog')}
-      </md-outlined-button>
+      </md-filled-tonal-button>
     </p>`
   }
 

@@ -10,7 +10,7 @@ export class GrampsjsViewRecentBlogPosts extends GrampsjsConnectedComponent {
       css`
         .change {
           font-size: 0.8em;
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
           margin-top: 0.3em;
         }
 

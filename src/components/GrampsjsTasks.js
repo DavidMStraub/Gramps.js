@@ -39,18 +39,17 @@ class GrampsjsTasks extends GrampsjsAppStateMixin(LitElement) {
           margin-bottom: 85px;
         }
 
+        .task-item + .task-item {
+          border-top: 1px solid var(--grampsjs-divider-color);
+        }
+
         .task-item {
-          border-top: 1px solid var(--grampsjs-body-font-color-10);
           display: flex;
           align-items: center;
           width: 100%;
           box-sizing: border-box;
           padding-left: 10px;
           gap: 8px;
-        }
-
-        .task-item:last-child {
-          border-bottom: 1px solid var(--grampsjs-body-font-color-10);
         }
 
         .task-item {
@@ -137,7 +136,7 @@ class GrampsjsTasks extends GrampsjsAppStateMixin(LitElement) {
           align-items: center;
           gap: 8px;
           font-size: 16px;
-          color: var(--grampsjs-body-font-color-70);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .batch-actions {
@@ -171,7 +170,7 @@ class GrampsjsTasks extends GrampsjsAppStateMixin(LitElement) {
 
         .empty {
           margin-top: 32px;
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
         }
       `,
     ]

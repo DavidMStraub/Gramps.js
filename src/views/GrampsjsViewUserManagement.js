@@ -30,7 +30,7 @@ export class GrampsjsViewUserManagement extends GrampsjsStaleDataMixin(
           border: 1px solid var(--grampsjs-body-font-color-15);
           font-size: 13px;
           padding: 6px 6px;
-          color: var(--grampsjs-body-font-color-75);
+          color: var(--grampsjs-text-secondary-color);
         }
       `,
     ]

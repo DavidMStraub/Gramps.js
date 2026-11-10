@@ -20,7 +20,7 @@ export class GrampsjsObjectToc extends GrampsjsAppStateMixin(LitElement) {
         }
 
         md-list-item.active {
-          --md-list-item-label-text-weight: 600;
+          --md-list-item-label-text-weight: var(--grampsjs-font-weight-heading);
         }
 
         h3 {
@@ -28,8 +28,8 @@ export class GrampsjsObjectToc extends GrampsjsAppStateMixin(LitElement) {
           margin-bottom: 12px;
           margin-top: 0;
           font-size: 16px;
-          font-weight: 420;
-          opacity: 0.55;
+          font-weight: var(--grampsjs-font-weight-medium);
+          color: var(--grampsjs-text-secondary-color);
         }
       `,
     ]

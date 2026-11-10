@@ -20,6 +20,7 @@ export class GrampsjsViewFamily extends GrampsjsViewObject {
       <grampsjs-family
         .data=${this._data}
         .appState="${this.appState}"
+        .actions="${this.renderActions()}"
         ?edit="${this.edit}"
         ?canEdit="${this.canEdit}"
       ></grampsjs-family>

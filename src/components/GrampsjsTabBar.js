@@ -29,8 +29,9 @@ class GrampsjsTabBar extends GrampsjsAppStateMixin(LitElement) {
     return [
       sharedStyles,
       css`
+        /* right below the app bar, which names the page */
         md-tabs {
-          margin: 20px;
+          margin: 0 20px;
           width: max-content;
           max-width: 100%;
         }
@@ -38,6 +39,7 @@ class GrampsjsTabBar extends GrampsjsAppStateMixin(LitElement) {
         md-primary-tab {
           flex: 0 0 auto;
           width: auto;
+          --md-primary-tab-label-text-size: 14px;
         }
       `,
     ]

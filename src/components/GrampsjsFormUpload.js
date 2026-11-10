@@ -43,7 +43,7 @@ class GrampsjsFormUpload extends GrampsjsAppStateMixin(LitElement) {
         }
 
         .file-icon {
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         span.filename {

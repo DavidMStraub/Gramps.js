@@ -44,19 +44,18 @@ export class GrampsjsViewBookmarks extends GrampsjsView {
   }
 
   render() {
-    return html` <h2>${this._('_Bookmarks')}</h2>
-      ${this._data.length === 0
-        ? html` <p>${this._('None')}.</p> `
-        : html`
-            <grampsjs-search-result-list
-              .data="${this._searchResult.slice().reverse()}"
-              .appState="${this.appState}"
-              showTags
-              large
-              noSep
-              linked
-            ></grampsjs-search-result-list>
-          `}`
+    return html` ${this._data.length === 0
+      ? html` <p>${this._('None')}.</p> `
+      : html`
+          <grampsjs-search-result-list
+            .data="${this._searchResult.slice().reverse()}"
+            .appState="${this.appState}"
+            showTags
+            large
+            noSep
+            linked
+          ></grampsjs-search-result-list>
+        `}`
   }
 
   async _fetchData(lang) {

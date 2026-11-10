@@ -78,7 +78,6 @@ export class GrampsjsViewRecentObject extends GrampsjsView {
         ></grampsjs-icon>
         ${this._('Clear _All')}
       </md-outlined-button>
-      <h2>${this._('Recently browsed objects')}</h2>
       ${this._data.length === 0
         ? html` <p>${this._('None')}.</p> `
         : html`

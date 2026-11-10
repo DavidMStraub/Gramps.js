@@ -3,6 +3,7 @@ import {css, html} from 'lit'
 import {mdiOpenInNew} from '@mdi/js'
 import {GrampsjsView} from './GrampsjsView.js'
 import {fireEvent} from '../util.js'
+import '@material/web/button/filled-tonal-button.js'
 
 // non-English languages with translated documentation
 const supportedDocLangs = [
@@ -51,7 +52,7 @@ export class GrampsjsViewHelp extends GrampsjsView {
       <div>
         <h3>${this._('Documentation')}</h3>
         <div class="button-container">
-          <md-outlined-button
+          <md-filled-tonal-button
             href="https://www.grampsweb.org/${docLang}user-guide"
             target="_blank"
           >
@@ -61,8 +62,8 @@ export class GrampsjsViewHelp extends GrampsjsView {
               slot="icon"
               color="currentColor"
             ></grampsjs-icon>
-          </md-outlined-button>
-          <md-outlined-button
+          </md-filled-tonal-button>
+          <md-filled-tonal-button
             href="https://www.grampsweb.org/${docLang}administration/admin"
             target="_blank"
           >
@@ -72,13 +73,13 @@ export class GrampsjsViewHelp extends GrampsjsView {
               slot="icon"
               color="currentColor"
             ></grampsjs-icon>
-          </md-outlined-button>
+          </md-filled-tonal-button>
         </div>
       </div>
 
       <div>
         <h3>${this._('Community')}</h3>
-        <md-outlined-button
+        <md-filled-tonal-button
           href="https://gramps.discourse.group/c/gramps-web"
           target="_blank"
         >
@@ -88,14 +89,16 @@ export class GrampsjsViewHelp extends GrampsjsView {
             slot="icon"
             color="currentColor"
           ></grampsjs-icon>
-        </md-outlined-button>
+        </md-filled-tonal-button>
       </div>
 
       <div>
         <h3>${this._('Quick Access')}</h3>
-        <md-outlined-button @click="${() => fireEvent(this, 'shortcuts:show')}">
+        <md-filled-tonal-button
+          @click="${() => fireEvent(this, 'shortcuts:show')}"
+        >
           ${this._('Keyboard Shortcuts')}
-        </md-outlined-button>
+        </md-filled-tonal-button>
       </div>
     `
   }

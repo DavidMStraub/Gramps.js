@@ -36,7 +36,7 @@ export class GrampsjsViewMediaLightbox extends GrampsjsView {
 
         .date {
           font-size: 0.85em;
-          font-weight: 300;
+          font-weight: var(--grampsjs-font-weight-body);
           font-family: var(--grampsjs-body-font-family);
           color: var(--grampsjs-body-font-color);
           padding-left: 0.8em;

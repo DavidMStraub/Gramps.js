@@ -1,7 +1,7 @@
 import {html, css} from 'lit'
-import '@material/web/button/outlined-button'
+import '@material/web/button/filled-tonal-button.js'
 import '@material/web/button/text-button.js'
-import '@material/web/iconbutton/outlined-icon-button'
+import '@material/web/iconbutton/filled-tonal-icon-button.js'
 import '@material/web/menu/menu.js'
 import '@material/web/menu/menu-item.js'
 import '@material/web/chips/chip-set'
@@ -87,9 +87,9 @@ export class GrampsjsPerson extends GrampsjsObject {
           display: none;
         }
 
-        p.button-list.icon-only md-outlined-icon-button {
-          --md-outlined-icon-button-container-width: 48px;
-          --md-outlined-icon-button-container-height: 48px;
+        p.button-list.icon-only md-filled-tonal-icon-button {
+          --md-filled-tonal-icon-button-container-width: 48px;
+          --md-filled-tonal-icon-button-container-height: 48px;
         }
 
         @container (min-width: 600px) {
@@ -311,21 +311,21 @@ export class GrampsjsPerson extends GrampsjsObject {
       <p class="button-list labeled">
         ${buttons.map(
           btn => html`
-            <md-outlined-button @click="${btn.handler}">
+            <md-filled-tonal-button @click="${btn.handler}">
               ${this._(btn.label)}
               <grampsjs-icon
                 path="${btn.path}"
                 color="currentColor"
                 slot="icon"
               ></grampsjs-icon>
-            </md-outlined-button>
+            </md-filled-tonal-button>
           `
         )}
       </p>
       <p class="button-list icon-only">
         ${buttons.map(
           btn => html`
-            <md-outlined-icon-button
+            <md-filled-tonal-icon-button
               @click="${btn.handler}"
               aria-label="${this._(btn.label)}"
               title="${this._(btn.label)}"
@@ -334,7 +334,7 @@ export class GrampsjsPerson extends GrampsjsObject {
                 path="${btn.path}"
                 color="var(--mdc-theme-primary)"
               ></grampsjs-icon>
-            </md-outlined-icon-button>
+            </md-filled-tonal-icon-button>
           `
         )}
       </p>

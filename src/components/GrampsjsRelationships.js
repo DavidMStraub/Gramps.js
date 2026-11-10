@@ -1,5 +1,6 @@
 import {LitElement, css, html} from 'lit'
 import '@material/web/button/outlined-button'
+import '@material/web/button/filled-tonal-button.js'
 import '@material/web/iconbutton/icon-button.js'
 import {
   mdiAccountMultiple,
@@ -421,7 +422,7 @@ export class GrampsjsRelationships extends GrampsjsAppStateMixin(LitElement) {
   }
 
   _renderFamilyBtn(grampsId, family) {
-    return html` <md-outlined-button
+    return html` <md-filled-tonal-button
       class="familybtn"
       href="/family/${grampsId}"
     >
@@ -432,7 +433,7 @@ export class GrampsjsRelationships extends GrampsjsAppStateMixin(LitElement) {
       ></grampsjs-icon>
       ${this._('Family')}
       ${renderPrivacyIcon(rowPrivacy(family), this.appState)}
-    </md-outlined-button>`
+    </md-filled-tonal-button>`
   }
 
   // the family object of a family profile

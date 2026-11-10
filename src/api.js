@@ -197,6 +197,16 @@ export function saveMapLayerSettings({
 }
 
 export const TREE_CONFIG_APP_TITLE = 'frontend.appTitle'
+
+// The name the app shows for the tree: the app title set for it, else the
+// name of its database, or '' when it has neither
+export function getTreeName(appState) {
+  return (
+    appState?.treeConfig?.[TREE_CONFIG_APP_TITLE] ||
+    appState?.dbInfo?.database?.name ||
+    ''
+  )
+}
 export const TREE_CONFIG_PRIMARY_COLOR = 'frontend.primaryColor'
 export const TREE_CONFIG_SECONDARY_COLOR = 'frontend.secondaryColor'
 export const TREE_CONFIG_HOME_PAGE_NOTE = 'frontend.homePageNote'

@@ -38,12 +38,11 @@ export class GrampsjsDnaMatches extends GrampsjsAppStateMixin(LitElement) {
       sharedStyles,
       css`
         .match {
-          border-top: 1px solid var(--grampsjs-body-font-color-10);
           padding: 0 20px;
         }
 
-        .match:last-child {
-          border-bottom: 1px solid var(--grampsjs-body-font-color-10);
+        .match + .match {
+          border-top: 1px solid var(--grampsjs-divider-color);
         }
         .head {
           display: inline-block;
@@ -54,7 +53,7 @@ export class GrampsjsDnaMatches extends GrampsjsAppStateMixin(LitElement) {
         }
 
         .name {
-          font-weight: 350;
+          font-weight: var(--grampsjs-font-weight-body);
           font-size: 17px;
         }
 

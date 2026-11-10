@@ -3,7 +3,7 @@ import {html, css, LitElement} from 'lit'
 
 import '@material/web/progress/circular-progress.js'
 import '@material/web/button/filled-button'
-import '@material/web/button/outlined-button'
+import '@material/web/button/filled-tonal-button.js'
 
 import {mdiCheckCircle} from '@mdi/js'
 
@@ -116,24 +116,20 @@ class GrampsjsLogin extends GrampsjsAppStateMixin(LitElement) {
           --button-height: 48px;
         }
 
-        .button-container md-outlined-button,
+        .button-container md-filled-tonal-button,
         .button-container md-filled-button {
           flex: 1;
           height: var(--button-height);
         }
 
-        .button-container md-outlined-button {
-          --md-outlined-button-container-height: var(--button-height);
-          --md-outlined-button-leading-space: 8px;
-          --md-outlined-button-trailing-space: 8px;
-          --md-outlined-button-top-space: 0px;
-          --md-outlined-button-bottom-space: 0px;
+        .button-container md-filled-tonal-button {
+          --md-filled-tonal-button-container-height: var(--button-height);
+          --md-filled-tonal-button-leading-space: 8px;
+          --md-filled-tonal-button-trailing-space: 8px;
+          --md-filled-tonal-button-top-space: 0px;
+          --md-filled-tonal-button-bottom-space: 0px;
           min-height: var(--button-height);
           max-height: var(--button-height);
-        }
-
-        .button-container md-outlined-button::part(outline) {
-          height: var(--button-height);
         }
 
         .button-container md-filled-button {
@@ -307,11 +303,11 @@ class GrampsjsLogin extends GrampsjsAppStateMixin(LitElement) {
                   ${window.grampsjsConfig.hideRegisterLink
                     ? ''
                     : html`
-                        <md-outlined-button
+                        <md-filled-tonal-button
                           @click="${() => this._handleNav('register')}"
                         >
                           ${this._('Register new account')}
-                        </md-outlined-button>
+                        </md-filled-tonal-button>
                       `}
                   <md-filled-button type="submit">
                     ${this._loggingIn

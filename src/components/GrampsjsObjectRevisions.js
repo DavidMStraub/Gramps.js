@@ -41,7 +41,7 @@ export class GrampsjsObjectRevisions extends GrampsjsAppStateMixin(LitElement) {
       sharedStyles,
       css`
         p.last-change {
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         grampsjs-icon[slot='start'] {

@@ -41,7 +41,7 @@ export class GrampsjsResearcher extends GrampsjsAppStateMixin(LitElement) {
       th,
       td {
         font-size: 1em;
-        font-weight: 300;
+        font-weight: var(--grampsjs-font-weight-body);
         padding: 6px 24px 6px 0;
         text-align: left;
         vertical-align: top;

@@ -19,7 +19,7 @@ export class GrampsjsShareUrl extends GrampsjsAppStateMixin(LitElement) {
         :host {
           font-size: 14px;
           font-weight: 450;
-          color: var(--grampsjs-body-font-color-45);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         md-icon-button {

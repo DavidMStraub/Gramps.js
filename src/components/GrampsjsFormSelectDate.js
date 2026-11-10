@@ -152,7 +152,7 @@ class GrampsjsFormSelectDate extends GrampsjsAppStateMixin(LitElement) {
             --md-sys-typescale-body-medium-weight,
             var(--md-ref-typeface-weight-regular, 400)
           );
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
           margin: -8px 0 16px;
         }
 

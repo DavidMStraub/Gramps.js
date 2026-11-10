@@ -65,7 +65,7 @@ export function applyColors(
   }
 
   // Primary: use seed's own tone clamped to [30, 50] so users see their chosen
-  // colour on the app bar. Tone 30-50 always reads white on-primary text.
+  // colour on primary buttons. Tone 30-50 always reads white on-primary text.
   const primaryTone = isDark
     ? Math.min(80, Math.max(60, Math.round(primaryHct.tone)))
     : Math.min(50, Math.max(30, Math.round(primaryHct.tone)))

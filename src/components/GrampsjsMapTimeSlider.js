@@ -35,7 +35,7 @@ class GrampsjsMapTimeSlider extends GrampsjsAppStateMixin(LitElement) {
           display: inline-block;
           font-size: 13px;
           font-weight: 600;
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
           white-space: nowrap;
           margin-left: 4px;
           margin-right: 12px;

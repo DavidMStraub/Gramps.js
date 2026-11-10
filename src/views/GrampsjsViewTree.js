@@ -5,7 +5,7 @@ import {repeat} from 'lit/directives/repeat.js'
 
 import '@material/web/textfield/filled-text-field.js'
 import '@material/web/button/filled-button'
-import '@material/web/button/outlined-button'
+import '@material/web/button/filled-tonal-button.js'
 import '@material/web/button/text-button.js'
 import '@material/web/dialog/dialog.js'
 import '@material/web/fab/fab.js'
@@ -136,7 +136,7 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
         }
 
         #chart {
-          height: calc(100vh - 153px);
+          height: calc(var(--grampsjs-content-height) - 85px);
           margin-left: -40px;
           margin-right: -40px;
           margin-bottom: -25px;
@@ -146,12 +146,6 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
           #chart {
             margin-left: -20px;
             margin-right: -20px;
-          }
-        }
-
-        @media (max-width: 599px) {
-          #chart {
-            height: calc(100vh - 145px);
           }
         }
 
@@ -218,12 +212,12 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
 
         #selected-person .gramps-id {
           font-size: 12px;
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         #selected-person .chevron {
           flex: none;
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         #controls .divider {
@@ -553,11 +547,11 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
 
   renderFab() {
     return html`
-      <md-fab variant="secondary" @click="${this._enableEditMode}">
+      <md-fab variant="primary" @click="${this._enableEditMode}">
         <grampsjs-icon
           slot="icon"
           .path="${mdiPencil}"
-          color="var(--mdc-theme-on-secondary)"
+          color="currentColor"
         ></grampsjs-icon>
       </md-fab>
     `
@@ -927,14 +921,17 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
 
   _renderHomePersonPicker() {
     return html`
-      <md-outlined-button id="select-home-person" @click="${this._openPicker}">
+      <md-filled-tonal-button
+        id="select-home-person"
+        @click="${this._openPicker}"
+      >
         <grampsjs-icon
           slot="icon"
           path="${mdiPencil}"
           color="currentColor"
         ></grampsjs-icon>
         ${this._('Set _Home Person')}
-      </md-outlined-button>
+      </md-filled-tonal-button>
       <grampsjs-form-select-object
         @select-object:changed="${this._handleHomePerson}"
         objectType="person"

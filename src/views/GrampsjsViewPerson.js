@@ -78,6 +78,7 @@ export class GrampsjsViewPerson extends GrampsjsViewObject {
       <grampsjs-person
         .data=${this._data}
         .appState="${this.appState}"
+        .actions="${this.renderActions()}"
         .homePersonDetails=${this.homePersonDetails}
         .timelineData=${this._timelineData}
         ?edit="${this.edit}"

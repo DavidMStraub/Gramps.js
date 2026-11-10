@@ -78,7 +78,7 @@ class GrampsjsFormEditEventInContext extends GrampsjsNewEventMixin(
         }
 
         .summary .secondary {
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .event-box grampsjs-participants {

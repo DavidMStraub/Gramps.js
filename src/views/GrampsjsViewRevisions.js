@@ -90,11 +90,6 @@ export class GrampsjsViewRevisions extends GrampsjsStaleDataMixin(
           opacity: 0.9;
         }
 
-        md-divider {
-          --md-divider-thickness: 1px;
-          --md-divider-color: var(--grampsjs-body-font-color-10);
-        }
-
         .counter {
           position: relative;
           color: var(--grampsjs-color-icon);
@@ -134,10 +129,7 @@ export class GrampsjsViewRevisions extends GrampsjsStaleDataMixin(
 
   render() {
     return html`
-      <h2>${this._('Revision History')}</h2>
-
       <md-list>
-        <md-divider></md-divider>
         ${this._data.map(txn => this._renderTransaction(txn))}
       </md-list>
 
@@ -162,46 +154,45 @@ export class GrampsjsViewRevisions extends GrampsjsStaleDataMixin(
     }, {})
 
     return html`<md-list-item
-        ?interactive="${!!txn.changes?.length}"
-        type="${txn.changes?.length ? 'link' : 'text'}"
-        href="${txn.changes?.length ? `/revision/${txn.id}` : ''}"
-      >
-        <div slot="headline">${this._(txn.description)}</div>
-        <grampsjs-icon
-          slot="start"
-          path="${mdiSourceCommit}"
-          color="var(--grampsjs-body-font-color-50)"
-        ></grampsjs-icon>
-        ${txn.changes?.length
-          ? Object.keys(counts).map(key =>
-              changeIcons[key]
-                ? html`<grampsjs-icon
-                    slot="end"
-                    path="${changeIcons[key]}"
-                    color="var(--grampsjs-body-font-color-45)"
-                  ></grampsjs-icon>`
-                : ''
-            )
-          : html`<grampsjs-icon
-              slot="end"
-              path="${mdiTimelineQuestionOutline}"
-              color="var(--grampsjs-body-font-color-45)"
-            ></grampsjs-icon>`}
-        <div slot="supporting-text">
-          <span class="user">
-            ${txn.connection?.user
-              ? this._renderUser(txn.connection?.user)
-              : this._('Unknown')},
-          </span>
-          <span class="time">
-            <grampsjs-timedelta
-              timestamp="${txn.timestamp}"
-              locale="${this.appState.i18n.lang}"
-            ></grampsjs-timedelta>
-          </span>
-        </div>
-      </md-list-item>
-      <md-divider></md-divider> `
+      ?interactive="${!!txn.changes?.length}"
+      type="${txn.changes?.length ? 'link' : 'text'}"
+      href="${txn.changes?.length ? `/revision/${txn.id}` : ''}"
+    >
+      <div slot="headline">${this._(txn.description)}</div>
+      <grampsjs-icon
+        slot="start"
+        path="${mdiSourceCommit}"
+        color="var(--grampsjs-body-font-color-50)"
+      ></grampsjs-icon>
+      ${txn.changes?.length
+        ? Object.keys(counts).map(key =>
+            changeIcons[key]
+              ? html`<grampsjs-icon
+                  slot="end"
+                  path="${changeIcons[key]}"
+                  color="var(--grampsjs-body-font-color-45)"
+                ></grampsjs-icon>`
+              : ''
+          )
+        : html`<grampsjs-icon
+            slot="end"
+            path="${mdiTimelineQuestionOutline}"
+            color="var(--grampsjs-body-font-color-45)"
+          ></grampsjs-icon>`}
+      <div slot="supporting-text">
+        <span class="user">
+          ${txn.connection?.user
+            ? this._renderUser(txn.connection?.user)
+            : this._('Unknown')},
+        </span>
+        <span class="time">
+          <grampsjs-timedelta
+            timestamp="${txn.timestamp}"
+            locale="${this.appState.i18n.lang}"
+          ></grampsjs-timedelta>
+        </span>
+      </div>
+    </md-list-item>`
   }
 
   // eslint-disable-next-line class-methods-use-this

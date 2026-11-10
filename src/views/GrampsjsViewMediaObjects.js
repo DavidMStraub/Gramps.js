@@ -143,8 +143,12 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
           align-items: center;
           gap: 16px;
           padding: 8px 4px;
-          border-bottom: 1px solid var(--grampsjs-body-font-color-10);
+          border-bottom: 1px solid var(--grampsjs-divider-color);
           cursor: pointer;
+        }
+
+        .media-list-item:last-child {
+          border-bottom: none;
         }
 
         .media-list-item:hover {
@@ -184,7 +188,7 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
         }
 
         .media-list-meta {
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
           font-size: 14px;
           white-space: nowrap;
           overflow: hidden;
@@ -238,7 +242,6 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
 
   renderContent() {
     return html`
-      <h2>${this._('Media')}</h2>
       ${this._renderFilter()}
       ${this._selectionMode ? this._renderBatchToolbar() : ''}
       ${this._galleryView ? this.renderAltView() : this._renderMediaList()}

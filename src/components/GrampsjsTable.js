@@ -29,7 +29,7 @@ export class GrampsjsTable extends GrampsjsAppStateMixin(LitElement) {
 
         table {
           border-collapse: collapse;
-          font-weight: 350;
+          font-weight: var(--grampsjs-font-weight-body);
           color: var(--grampsjs-body-font-color-87);
           font-variant-numeric: tabular-nums;
         }
@@ -41,13 +41,13 @@ export class GrampsjsTable extends GrampsjsAppStateMixin(LitElement) {
         tbody tr {
           display: grid;
           gap: 0.75em;
-          border-top: 1px solid var(--grampsjs-body-font-color-10);
+          border-top: 1px solid var(--grampsjs-divider-color);
           grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
           padding: 10px 0;
         }
 
-        tbody tr:last-child {
-          border-bottom: 1px solid var(--grampsjs-body-font-color-10);
+        tbody tr:first-child {
+          border-top: none;
         }
 
         tbody td {
@@ -64,7 +64,7 @@ export class GrampsjsTable extends GrampsjsAppStateMixin(LitElement) {
           display: block;
           margin-bottom: 5px;
           font-size: 14px;
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
           font-weight: 400;
         }
 
@@ -109,7 +109,7 @@ export class GrampsjsTable extends GrampsjsAppStateMixin(LitElement) {
           text-align: left;
           padding: 14px 16px;
           font-size: 14px;
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
           font-weight: 500;
           vertical-align: middle;
           white-space: nowrap;
@@ -166,10 +166,6 @@ export class GrampsjsTable extends GrampsjsAppStateMixin(LitElement) {
           display: table-row;
           gap: 0;
           padding: 0;
-        }
-
-        table.wide tbody tr:first-child {
-          border-top: none;
         }
 
         table.wide tbody td {
@@ -255,7 +251,7 @@ export class GrampsjsTable extends GrampsjsAppStateMixin(LitElement) {
           gap: 8px;
           padding: 4px 4px 4px 8px;
           font-size: 14px;
-          color: var(--grampsjs-body-font-color-70);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .narrow-select-all + table {

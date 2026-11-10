@@ -10,7 +10,7 @@ export class GrampsjsTableBase extends GrampsjsAppStateMixin(LitElement) {
       css`
         table {
           font-size: 15px;
-          font-weight: 350;
+          font-weight: var(--grampsjs-font-weight-body);
           color: var(--grampsjs-body-font-color-87);
           font-variant-numeric: tabular-nums;
           margin-top: 20px;
@@ -20,22 +20,27 @@ export class GrampsjsTableBase extends GrampsjsAppStateMixin(LitElement) {
 
         th {
           font-size: 14px;
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
           font-weight: 400;
         }
 
         th,
         td {
           padding: 12px 16px;
-          border-bottom: 1px solid var(--grampsjs-body-font-color-10);
+          border-bottom: 1px solid var(--grampsjs-divider-color);
           text-align: left;
           margin: 0;
+        }
+
+        tbody tr:last-child td,
+        tbody tr:last-child th {
+          border-bottom: none;
         }
 
         thead th {
           padding: 14px 16px;
           font-weight: 500;
-          border-bottom-color: var(--grampsjs-body-font-color-20);
+          border-bottom-color: var(--grampsjs-divider-strong-color);
         }
 
         table.linked tr:hover td {

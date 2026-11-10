@@ -40,7 +40,7 @@ class GrampsjsChatToolCalls extends LitElement {
 
         .status-text {
           font-size: 13px;
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
           margin-left: 6px;
         }
 
@@ -95,7 +95,7 @@ class GrampsjsChatToolCalls extends LitElement {
           background: var(--grampsjs-color-shade-230);
           border-radius: 8px;
           font-size: 12px;
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .detail-name {

@@ -67,3 +67,129 @@ export function selectPreReadyView(
       return {view: 'continue'}
   }
 }
+
+// Pages where the Gramps ID is used as the page title
+export const OBJECT_PAGES = new Set([
+  'person',
+  'family',
+  'event',
+  'place',
+  'source',
+  'citation',
+  'repository',
+  'media',
+  'note',
+  'task',
+])
+
+// Map from route name to translatable title string
+export const PAGE_TITLES = {
+  home: 'Home',
+  blog: 'Blog',
+  people: 'People',
+  families: 'Families',
+  events: 'Events',
+  places: 'Places',
+  sources: 'Sources',
+  citations: 'Citations',
+  repositories: 'Repositories',
+  notes: 'Notes',
+  medialist: 'Media',
+  map: 'Map',
+  tree: 'Family Tree',
+  'dna-matches': 'DNA',
+  'dna-chromosome': 'DNA',
+  ydna: 'DNA',
+  chat: 'Assistant',
+  recent: 'History',
+  bookmarks: '_Bookmarks',
+  tasks: 'Tasks',
+  notifications: 'Notifications',
+  tags: 'Tags',
+  export: 'Export',
+  reports: '_Reports',
+  report: '_Reports',
+  revisions: 'Revisions',
+  revision: 'Revisions',
+  search: 'Search',
+  settings: 'Settings',
+  anniversaries: 'Anniversaries',
+}
+
+// Pages listed under "Lists" in the main menu
+export const LISTS_PAGES = [
+  'people',
+  'families',
+  'events',
+  'places',
+  'citations',
+  'sources',
+  'repositories',
+  'notes',
+]
+
+// The list page that each object page belongs to, as [title, path]
+const OBJECT_LIST_PAGES = {
+  person: ['People', 'people'],
+  family: ['Families', 'families'],
+  event: ['Events', 'events'],
+  place: ['Places', 'places'],
+  source: ['Sources', 'sources'],
+  citation: ['Citations', 'citations'],
+  repository: ['Repositories', 'repositories'],
+  note: ['Notes', 'notes'],
+  media: ['Media', 'medialist'],
+  task: ['Tasks', 'tasks'],
+  revision: ['Revisions', 'revisions'],
+}
+
+// Pages whose own title comes from their data, such as a report's name, as
+// [title, path] of the page they belong to
+const DETAIL_PAGES = {
+  report: ['_Reports', 'reports'],
+}
+
+export const SETTINGS_TABS = {
+  user: 'User settings',
+  administration: 'Administration',
+  users: 'Manage users',
+  info: 'System Information',
+}
+
+// The title a view reported for the page it shows ({page, pageId, title}),
+// when that is the current page
+export function pageTitleDetail({page, pageId}, pageTitle) {
+  if (pageTitle?.page === page && pageTitle?.pageId === pageId) {
+    return pageTitle.title ?? ''
+  }
+  return ''
+}
+
+// The parts of a page's title in the top app bar, from the outermost one.
+// Each is {title, href, literal}: href leads to the page the part names, and
+// a literal title, such as a Gramps ID, is shown without translation. A page
+// in DETAIL_PAGES ends with `detail`, the title its view reported, once known.
+export function pageTitleParts({page, pageId}, detail = '') {
+  if (page in DETAIL_PAGES && detail) {
+    const [title, path] = DETAIL_PAGES[page]
+    return [{title, href: `/${path}`}, {title: detail}]
+  }
+  if (page in OBJECT_LIST_PAGES && pageId) {
+    const [title, path] = OBJECT_LIST_PAGES[page]
+    return [
+      {title, href: `/${path}`},
+      {title: pageId, literal: true},
+    ]
+  }
+  if (LISTS_PAGES.includes(page)) {
+    return [{title: 'Lists', href: '/people'}, {title: PAGE_TITLES[page]}]
+  }
+  if (page === 'settings' && pageId in SETTINGS_TABS) {
+    return [
+      {title: 'Settings', href: '/settings/user'},
+      {title: SETTINGS_TABS[pageId]},
+    ]
+  }
+  const title = PAGE_TITLES[page]
+  return title ? [{title}] : []
+}

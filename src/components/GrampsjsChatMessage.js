@@ -66,7 +66,7 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
           margin: 15px 0;
           font-size: 16px;
           line-height: 26px;
-          font-weight: 340;
+          font-weight: var(--grampsjs-font-weight-body);
           clear: right;
           max-width: 90%;
           display: flex;
