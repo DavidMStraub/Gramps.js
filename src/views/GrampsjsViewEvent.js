@@ -20,6 +20,7 @@ export class GrampsjsViewEvent extends GrampsjsViewObject {
       <grampsjs-event
         .data=${this._data}
         .appState="${this.appState}"
+        .actions="${this.renderActions()}"
         ?edit="${this.edit}"
         ?canEdit="${this.canEdit}"
       ></grampsjs-event>

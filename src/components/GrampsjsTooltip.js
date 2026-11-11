@@ -20,6 +20,7 @@ export class GrampsjsTooltip extends GrampsjsAppStateMixin(LitElement) {
       target: {type: Object, attribute: false},
       content: {type: String},
       theme: {type: String},
+      placement: {type: String},
       _tippy: {type: Object},
     }
   }
@@ -30,6 +31,22 @@ export class GrampsjsTooltip extends GrampsjsAppStateMixin(LitElement) {
     this.target = {}
     this.content = ''
     this.theme = ''
+    this.placement = ''
+    this._tippy = {}
+  }
+
+  connectedCallback() {
+    super.connectedCallback()
+    // reattached after a disconnect, which destroyed the tooltip
+    if (this.hasUpdated && !this._tippy.setContent) {
+      this.target = this._getTarget()
+      this._initTippy()
+    }
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback()
+    this._tippy.destroy?.()
     this._tippy = {}
   }
 
@@ -71,6 +88,9 @@ export class GrampsjsTooltip extends GrampsjsAppStateMixin(LitElement) {
     }
     if (this.theme) {
       options.theme = this.theme
+    }
+    if (this.placement) {
+      options.placement = this.placement
     }
     this._tippy = tippy(this.target, options)
   }

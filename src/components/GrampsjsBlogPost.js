@@ -28,7 +28,7 @@ export class GrampsjsBlogPost extends GrampsjsAppStateMixin(LitElement) {
 
         h3.author {
           font-family: var(--grampsjs-body-font-family);
-          font-weight: 300;
+          font-weight: var(--grampsjs-font-weight-body);
           font-size: 16px;
           text-transform: uppercase;
           letter-spacing: 0.15em;

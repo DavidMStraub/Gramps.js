@@ -25,7 +25,7 @@ export class GrampsjsViewBlog extends GrampsjsStaleDataMixin(GrampsjsView) {
 
         #posts {
           display: grid;
-          gap: 1em;
+          gap: 40px 24px;
           grid-template-columns: repeat(
             auto-fill,
             minmax(min(420px, 100%), 1fr)
@@ -34,10 +34,16 @@ export class GrampsjsViewBlog extends GrampsjsStaleDataMixin(GrampsjsView) {
 
         .post {
           display: block;
-          padding: 0.8em 1em;
+          padding: 16px;
+          border-radius: 8px;
           cursor: pointer;
-          outline: 2px solid var(--grampsjs-body-font-color-0);
-          transition: outline-color 0.3s ease-in;
+          outline: none;
+          transition: background-color 150ms;
+        }
+
+        /* the whole post is the link: a neutral hover layer shows it */
+        .post:hover {
+          background-color: var(--grampsjs-body-font-color-5);
         }
 
         a.post:link,
@@ -47,10 +53,10 @@ export class GrampsjsViewBlog extends GrampsjsStaleDataMixin(GrampsjsView) {
           text-decoration: none;
         }
 
-        .post:focus,
-        .post:focus-within {
-          outline: 2px solid var(--grampsjs-body-font-color-10);
-          border-radius: 5px;
+        .post:focus-visible {
+          background-color: var(--grampsjs-body-font-color-5);
+          outline: 2px solid var(--md-sys-color-primary);
+          outline-offset: -2px;
         }
 
         md-fab {
@@ -93,11 +99,11 @@ export class GrampsjsViewBlog extends GrampsjsStaleDataMixin(GrampsjsView) {
 
   renderFab() {
     return html`
-      <md-fab variant="secondary" @click=${this._handleClickAdd}>
+      <md-fab variant="primary" @click=${this._handleClickAdd}>
         <grampsjs-icon
           slot="icon"
           .path="${mdiPlus}"
-          color="var(--mdc-theme-on-secondary)"
+          color="currentColor"
         ></grampsjs-icon>
       </md-fab>
     `
@@ -110,7 +116,6 @@ export class GrampsjsViewBlog extends GrampsjsStaleDataMixin(GrampsjsView) {
   renderPosts() {
     if (this._firstLoaded && this._dataSources.length === 0) {
       return html`
-        <h2>${this._('Blog')}</h2>
         <p class="muted">
           ${this._("To start using the blog, add a source with tag 'Blog'.")}
         </p>
@@ -120,7 +125,6 @@ export class GrampsjsViewBlog extends GrampsjsStaleDataMixin(GrampsjsView) {
       return html``
     }
     return html`
-      <h2>${this._('Blog')}</h2>
       <div id="posts">
         ${this._dataSources.map(
           (source, i) => this.renderPost(source, this._dataNotes[i]),

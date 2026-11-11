@@ -1,7 +1,6 @@
 import {html} from 'lit'
-import {mdiFormatListChecks} from '@mdi/js'
 
-import '../components/GrampsjsBreadcrumbs.js'
+import '../components/GrampsjsObjectActions.js'
 import '../components/GrampsjsTask.js'
 import {GrampsjsViewSource} from './GrampsjsViewSource.js'
 import {fireEvent} from '../util.js'
@@ -15,17 +14,15 @@ export class GrampsjsViewTask extends GrampsjsViewSource {
     this._className = 'source'
   }
 
-  // the breadcrumbs lead to the task list, in place of the sources
-  renderBreadcrumbs() {
+  // a task can't be bookmarked, and its privacy is edited in place
+  renderActions() {
     return html`
-      <grampsjs-breadcrumbs
+      <grampsjs-object-actions
         .data="${this._data}"
         .appState="${this.appState}"
-        objectsName="Tasks"
-        .objectIcon="${mdiFormatListChecks}"
         ?edit="${this.canEdit}"
         hideBookmark
-      ></grampsjs-breadcrumbs>
+      ></grampsjs-object-actions>
     `
   }
 
@@ -35,6 +32,7 @@ export class GrampsjsViewTask extends GrampsjsViewSource {
         .saveNote="${data => this._saveNote(data)}"
         .source="${this._data}"
         .appState="${this.appState}"
+        .actions="${this.renderActions()}"
         @task:delete="${this._deleteSelf}"
       ></grampsjs-task>
     `

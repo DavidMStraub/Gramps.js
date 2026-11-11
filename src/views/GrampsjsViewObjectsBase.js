@@ -79,7 +79,7 @@ export class GrampsjsViewObjectsBase extends GrampsjsStaleDataMixin(
           align-items: center;
           gap: 8px;
           font-size: 16px;
-          color: var(--grampsjs-body-font-color-70);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .batch-toolbar md-filled-select {
@@ -570,11 +570,11 @@ export class GrampsjsViewObjectsBase extends GrampsjsStaleDataMixin(
 
   renderFab() {
     return html`
-      <md-fab variant="secondary" @click=${this._handleClickAdd}>
+      <md-fab variant="primary" @click=${this._handleClickAdd}>
         <grampsjs-icon
           slot="icon"
           .path="${mdiPlus}"
-          color="var(--mdc-theme-on-secondary)"
+          color="currentColor"
         ></grampsjs-icon>
       </md-fab>
     `

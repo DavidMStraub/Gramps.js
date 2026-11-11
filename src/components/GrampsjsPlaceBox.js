@@ -36,7 +36,7 @@ export class GrampsjsPlaceBox extends GrampsjsConnectedComponent {
 
         h4 {
           margin-top: 2px;
-          font-weight: 300;
+          font-weight: var(--grampsjs-font-weight-body);
           font-size: 15px;
         }
 

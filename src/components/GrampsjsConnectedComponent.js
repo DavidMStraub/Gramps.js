@@ -20,7 +20,8 @@ export class GrampsjsConnectedComponent extends GrampsjsStaleDataMixin(
   static get properties() {
     return {
       loading: {type: Boolean},
-      error: {type: Boolean},
+      // reflected, so a container can hide what renders nothing on error
+      error: {type: Boolean, reflect: true},
       loadWithoutLocale: {type: Boolean},
       _errorMessage: {type: String},
       _errorDetail: {type: Object},

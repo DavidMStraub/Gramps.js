@@ -40,11 +40,11 @@ export class GrampsjsViewYDna extends GrampsjsViewDnaBase {
   }
 
   renderFab() {
-    return html`<md-fab variant="secondary" @click="${this._handleClickAdd}">
+    return html`<md-fab variant="primary" @click="${this._handleClickAdd}">
       <grampsjs-icon
         slot="icon"
         .path="${mdiPlus}"
-        color="var(--mdc-theme-on-secondary)"
+        color="currentColor"
       ></grampsjs-icon>
     </md-fab>`
   }

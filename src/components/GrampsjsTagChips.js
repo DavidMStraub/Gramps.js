@@ -4,8 +4,8 @@ import {mdiTagOutline} from '@mdi/js'
 import {tagColorToCss} from '../color.js'
 
 /* Compact, read-only tag chips for table cells and list rows: a smaller
-version of the outlined chips on the object page, with label and outline in
-the tag colour.
+version of the tonal chips on the object page: a light tint of the tag
+colour with the label in the tag colour.
 
 Tags are sorted by their Gramps priority. At most `max` chips are shown,
 followed by a "+N" chip listing the rest in its tooltip. On narrow screens,
@@ -35,19 +35,23 @@ export class GrampsjsTagChips extends LitElement {
         height: 24px;
         padding: 0 8px;
         border-radius: 8px;
-        border: 1px solid var(--tag-color);
+        background-color: color-mix(
+          in srgb,
+          var(--tag-color) 14%,
+          var(--md-sys-color-surface)
+        );
         color: var(--tag-color);
         font-family: var(--grampsjs-body-font-family);
         font-size: 12px;
         font-weight: 500;
-        line-height: 22px;
+        line-height: 24px;
         white-space: nowrap;
         min-width: 0;
       }
 
       :host([dense]) .chip {
         height: 20px;
-        line-height: 18px;
+        line-height: 20px;
         padding: 0 6px;
         border-radius: 6px;
       }
@@ -59,8 +63,7 @@ export class GrampsjsTagChips extends LitElement {
       }
 
       .chip.neutral {
-        --tag-color: var(--grampsjs-body-font-color-60);
-        border-color: var(--md-sys-color-outline-variant);
+        --tag-color: var(--grampsjs-text-secondary-color);
       }
 
       .chip svg {

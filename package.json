@@ -130,8 +130,6 @@
     "@awesome.me/webawesome": "^3.14.0",
     "@hpcc-js/wasm": "^2.36.0",
     "@material/material-color-utilities": "^0.4.0",
-    "@material/mwc-drawer": "^0.27.0",
-    "@material/mwc-top-app-bar": "^0.27.0",
     "@material/web": "^2.5.0",
     "@mdi/js": "^7.4.47",
     "@tmcw/togeojson": "7.1.3",

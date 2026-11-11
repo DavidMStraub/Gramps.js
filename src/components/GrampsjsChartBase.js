@@ -14,13 +14,7 @@ export class GrampsjsChartBase extends GrampsjsChartCanvasMixin(
       css`
         div#container {
           display: flex;
-          height: calc(100vh - 153px);
-        }
-
-        @media (max-width: 599px) {
-          div#container {
-            height: calc(100vh - 145px);
-          }
+          height: calc(var(--grampsjs-content-height) - 85px);
         }
       `,
     ]

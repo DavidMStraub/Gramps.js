@@ -54,8 +54,9 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
       super.styles,
       css`
         :host {
+          display: block;
           margin: 0;
-          margin-top: -4px;
+          border-top: 1px solid var(--grampsjs-divider-strong-color);
         }
 
         .wikidata-hint {
@@ -301,7 +302,7 @@ export class GrampsjsViewMap extends GrampsjsStaleDataMixin(GrampsjsView) {
         layerSwitcher
         locateControl
         width="100%"
-        height="calc(100dvh - 64px - 36px)"
+        height="calc(var(--grampsjs-content-height) - 37px)"
         latitude="${center[0]}"
         longitude="${center[1]}"
         year="${this._year}"

@@ -74,7 +74,7 @@ export class GrampsjsDiffJson extends GrampsjsAppStateMixin(LitElement) {
         }
         .jsondiffpatch-unchanged,
         .jsondiffpatch-movedestination {
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
         }
         .jsondiffpatch-unchanged,
         .jsondiffpatch-movedestination > .jsondiffpatch-value {

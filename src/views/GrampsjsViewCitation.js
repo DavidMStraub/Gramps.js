@@ -20,6 +20,7 @@ export class GrampsjsViewCitation extends GrampsjsViewObject {
       <grampsjs-citation
         .data=${this._data}
         .appState="${this.appState}"
+        .actions="${this.renderActions()}"
         ?edit="${this.edit}"
         ?canEdit="${this.canEdit}"
       ></grampsjs-citation>

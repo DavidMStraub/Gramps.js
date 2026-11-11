@@ -20,7 +20,7 @@ export class GrampsjsTimeline extends GrampsjsAppStateMixin(LitElement) {
       css`
         :host {
           display: block;
-          height: calc(100vh - 64px - 36px);
+          height: calc(var(--grampsjs-content-height) - 32px);
           outline: none;
         }
 
@@ -68,7 +68,7 @@ export class GrampsjsTimeline extends GrampsjsAppStateMixin(LitElement) {
           border-radius: 16px;
           background-color: var(--grampsjs-color-shade-230);
           font-size: 13px;
-          color: var(--grampsjs-body-font-color-70);
+          color: var(--grampsjs-text-secondary-color);
           pointer-events: none;
           white-space: nowrap;
           z-index: 1;

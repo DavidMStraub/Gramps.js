@@ -38,6 +38,7 @@ export class GrampsjsViewMedia extends GrampsjsViewObject {
       <grampsjs-media-object
         .data=${this._data}
         .appState="${this.appState}"
+        .actions="${this.renderActions()}"
         .dbInfo=${this.dbInfo}
         ?canEdit="${this.canEdit}"
         ?edit="${this.edit}"

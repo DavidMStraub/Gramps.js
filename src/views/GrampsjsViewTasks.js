@@ -40,8 +40,7 @@ export class GrampsjsViewTasks extends GrampsjsStaleDataMixin(GrampsjsView) {
   }
 
   render() {
-    return html`<h2>${this._('Tasks')}</h2>
-
+    return html`
       <grampsjs-tasks
         .appState="${this.appState}"
         .data="${this._data}"
@@ -50,16 +49,17 @@ export class GrampsjsViewTasks extends GrampsjsStaleDataMixin(GrampsjsView) {
         @filters:changed="${this._handleFiltersChanged}"
       ></grampsjs-tasks>
 
-      ${this.appState.permissions.canAdd ? this.renderFab() : ''} `
+      ${this.appState.permissions.canAdd ? this.renderFab() : ''}
+    `
   }
 
   renderFab() {
     return html`
-      <md-fab variant="secondary" @click=${this._handleClickAdd}>
+      <md-fab variant="primary" @click=${this._handleClickAdd}>
         <grampsjs-icon
           slot="icon"
           .path="${mdiPlus}"
-          color="var(--mdc-theme-on-secondary)"
+          color="currentColor"
         ></grampsjs-icon>
       </md-fab>
     `

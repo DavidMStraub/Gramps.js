@@ -29,7 +29,7 @@ class GrampsjsFormNewTag extends GrampsjsObjectForm {
         }
 
         .section-label {
-          color: var(--grampsjs-body-font-color-70);
+          color: var(--grampsjs-text-secondary-color);
           margin: 14px 0 6px;
         }
 

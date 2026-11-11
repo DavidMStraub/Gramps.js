@@ -49,7 +49,7 @@ export class GrampsjsWikidataBuildingBox extends GrampsjsAppStateMixin(
         h4 {
           margin-top: 2px;
           margin-bottom: 0;
-          font-weight: 300;
+          font-weight: var(--grampsjs-font-weight-body);
           font-size: 15px;
         }
 

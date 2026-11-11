@@ -37,6 +37,12 @@ export class GrampsjsTask extends GrampsjsAppStateMixin(LitElement) {
     return [
       sharedStyles,
       css`
+        /* the task's toolbar, at the end of the heading's first line */
+        .actions {
+          float: right;
+          margin: 12px 0 0 16px;
+        }
+
         .page-actions {
           display: flex;
           gap: 4px;
@@ -66,7 +72,7 @@ export class GrampsjsTask extends GrampsjsAppStateMixin(LitElement) {
         }
 
         .property .label {
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .section-heading {
@@ -92,6 +98,7 @@ export class GrampsjsTask extends GrampsjsAppStateMixin(LitElement) {
     return {
       source: {type: Object},
       saveNote: {attribute: false},
+      actions: {attribute: false},
       _editingNote: {type: Boolean},
       _savingNote: {type: Boolean},
       _editingGallery: {type: Boolean},
@@ -103,6 +110,7 @@ export class GrampsjsTask extends GrampsjsAppStateMixin(LitElement) {
   constructor() {
     super()
     this.source = {}
+    this.actions = ''
     // Saves the note data; resolves to whether the save succeeded
     this.saveNote = async () => false
     this._editingNote = false
@@ -121,6 +129,7 @@ export class GrampsjsTask extends GrampsjsAppStateMixin(LitElement) {
       return html``
     }
     return html`
+      ${this.actions ? html`<div class="actions">${this.actions}</div>` : ''}
       <h2>
         <grampsjs-editable-title
           .value="${this.source.title}"

@@ -1,6 +1,5 @@
-import '@material/mwc-drawer'
 import '@material/web/progress/linear-progress.js'
-import '@material/mwc-top-app-bar'
+import './dialogBackdrop.js'
 import '@material/web/button/filled-button.js'
 import {mdiLogout} from '@mdi/js'
 import {LitElement, css, html} from 'lit'
@@ -14,7 +13,7 @@ import {
   isTreeMismatch,
   clearMediaCaches,
   cleanOldDrafts,
-  TREE_CONFIG_APP_TITLE,
+  getTreeName,
   TREE_CONFIG_PRIMARY_COLOR,
   TREE_CONFIG_SECONDARY_COLOR,
 } from './api.js'
@@ -41,6 +40,9 @@ import {
   LOADING_STATE_NO_TREE,
   LOADING_STATE_READY,
   selectPreReadyView,
+  OBJECT_PAGES,
+  PAGE_TITLES,
+  pageTitleDetail,
 } from './routing.js'
 import './components/GrampsjsAppBar.js'
 import './components/GrampsjsDnaTabBar.js'
@@ -49,7 +51,11 @@ import './components/GrampsjsFirstRun.js'
 import './components/GrampsjsIcon.js'
 import './components/GrampsjsFormRegister.js'
 import './components/GrampsjsLogin.js'
-import './components/GrampsjsMainMenu.js'
+import {
+  DRAWER_EXPANDED,
+  DRAWER_MODAL,
+  DRAWER_RAIL,
+} from './components/GrampsjsNavDrawer.js'
 import './components/GrampsjsPages.js'
 import './components/GrampsjsTabBar.js'
 import './components/GrampsjsSnackbar.js'
@@ -65,54 +71,6 @@ import {handleOIDCCallback, handleOIDCComplete} from './oidc.js'
 
 const MINIMUM_API_VERSION = '3.17.0'
 
-// Pages where the Gramps ID is used as the page title
-const OBJECT_PAGES = new Set([
-  'person',
-  'family',
-  'event',
-  'place',
-  'source',
-  'citation',
-  'repository',
-  'media',
-  'note',
-  'task',
-])
-
-// Map from route name to translatable title string
-const PAGE_TITLES = {
-  home: 'Home',
-  blog: 'Blog',
-  people: 'People',
-  families: 'Families',
-  events: 'Events',
-  places: 'Places',
-  sources: 'Sources',
-  citations: 'Citations',
-  repositories: 'Repositories',
-  notes: 'Notes',
-  medialist: 'Media',
-  map: 'Map',
-  tree: 'Family Tree',
-  'dna-matches': 'DNA',
-  'dna-chromosome': 'DNA',
-  ydna: 'DNA',
-  chat: 'Assistant',
-  recent: 'History',
-  bookmarks: '_Bookmarks',
-  tasks: 'Tasks',
-  notifications: 'Notifications',
-  tags: 'Tags',
-  export: 'Export',
-  reports: '_Reports',
-  report: '_Reports',
-  revisions: 'Revisions',
-  revision: 'Revisions',
-  search: 'Search',
-  settings: 'Settings',
-  anniversaries: 'Anniversaries',
-}
-
 export class GrampsJs extends LitElement {
   static get properties() {
     return {
@@ -121,6 +79,7 @@ export class GrampsJs extends LitElement {
       progress: {type: Boolean},
       _saving: {type: Boolean},
       _saveComplete: {type: Boolean},
+      _pageTitle: {state: true},
       loadingState: {type: Number},
       _homePersonDetails: {type: Object},
       _homePersonMissing: {type: Boolean},
@@ -128,6 +87,7 @@ export class GrampsJs extends LitElement {
       _shortcutPressed: {type: String},
       _firstRunToken: {type: String},
       _loadingStrings: {type: Boolean},
+      _drawerOpen: {type: Boolean},
     }
   }
 
@@ -138,6 +98,8 @@ export class GrampsJs extends LitElement {
     this._saving = false
     this._saveComplete = false
     this._saveCompleteTimer = null
+    // {page, pageId, title} reported by a view whose title comes from its data
+    this._pageTitle = null
     this.loadingState = LOADING_STATE_INITIAL
     this._homePersonDetails = {}
     this._homePersonMissing = false
@@ -148,7 +110,7 @@ export class GrampsJs extends LitElement {
     this._firstRunToken = ''
     this._loadingStrings = false
     this._searchIndexBuilding = false
-    this._drawerWasOpen = false
+    this._drawerOpen = false
     this._metadataConfirmed = false
   }
 
@@ -163,14 +125,34 @@ export class GrampsJs extends LitElement {
       sharedStyles,
       css`
         :host {
-          height: 100%;
+          display: block;
+          min-height: 100%;
           --grampsjs-app-bar-height: 64px;
+          --grampsjs-drawer-width: 256px;
+          --grampsjs-rail-width: 72px;
+          /* the height left below the app bar, for views that fill the window */
+          --grampsjs-content-height: calc(
+            100dvh - var(--grampsjs-app-bar-height)
+          );
         }
 
         @media (max-width: 599px) {
           :host {
             --grampsjs-app-bar-height: 56px;
           }
+        }
+
+        .shell {
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr);
+          min-height: 100dvh;
+        }
+
+        /* the containing block for views that position elements absolutely,
+           such as the map's search box and time slider */
+        .content {
+          position: relative;
+          min-width: 0;
         }
 
         main {
@@ -185,38 +167,10 @@ export class GrampsJs extends LitElement {
           display: block;
         }
 
-        mwc-drawer {
-          --mdc-drawer-width: 230px;
-          --mdc-typography-headline6-font-family: var(
-            --grampsjs-heading-font-family
-          );
-          --mdc-typography-headline6-font-weight: 400;
-          --mdc-typography-headline6-font-size: 19px;
-        }
-
-        mwc-drawer[open]:not([type='modal']) {
-          --mdc-top-app-bar-width: calc(100% - var(--mdc-drawer-width, 256px));
-        }
-
         md-linear-progress {
           --md-linear-progress-active-indicator-color: var(
             --grampsjs-color-page-loading-progress
           );
-        }
-
-        [slot='appContent'] md-linear-progress {
-          position: sticky;
-          top: var(--grampsjs-app-bar-height);
-          z-index: 4;
-          visibility: hidden;
-        }
-
-        [slot='appContent'] md-linear-progress.active {
-          visibility: visible;
-        }
-
-        #app-title:first-letter {
-          text-transform: capitalize;
         }
 
         .center-xy {
@@ -269,7 +223,7 @@ export class GrampsJs extends LitElement {
           padding: 4px 6px;
           text-align: center;
           border: 1px solid var(--grampsjs-body-font-color-20);
-          color: var(--grampsjs-body-font-color-70);
+          color: var(--grampsjs-text-secondary-color);
           border-radius: 6px;
         }
 
@@ -286,27 +240,15 @@ export class GrampsJs extends LitElement {
             overflow: visible !important;
           }
 
-          mwc-drawer {
-            --mdc-drawer-width: 0px;
-            height: auto !important;
-            overflow: visible !important;
+          .shell {
+            display: block;
+            min-height: 0;
           }
 
-          [slot='appContent'] {
-            height: auto !important;
-            overflow: visible !important;
-          }
-
-          main {
-            height: auto !important;
-            overflow: visible !important;
-          }
-
-          grampsjs-main-menu,
+          grampsjs-nav-drawer,
           grampsjs-app-bar,
           grampsjs-tab-bar,
-          grampsjs-dna-tab-bar,
-          [slot='appContent'] md-linear-progress {
+          grampsjs-dna-tab-bar {
             display: none !important;
           }
         }
@@ -602,25 +544,25 @@ export class GrampsJs extends LitElement {
     ) {
       this._loadStrings(grampsStrings, this.appState.settings.lang)
     }
+    const drawerMode = this._drawerMode
     return html`
-      <mwc-drawer
-        type="${this.appState.screenSize !== 'small' ? 'dismissible' : 'modal'}"
-        id="app-drawer"
-        ?open="${this.appState.screenSize !== 'small'}"
-      >
-        <div>
-          <grampsjs-main-menu .appState="${this.appState}"></grampsjs-main-menu>
-        </div>
-        <div slot="appContent">
+      <div class="shell">
+        <grampsjs-nav-drawer
+          .appState="${this.appState}"
+          mode="${drawerMode}"
+          ?open="${this._drawerOpen}"
+          @drawer:close="${this._closeDrawer}"
+        ></grampsjs-nav-drawer>
+        <div class="content">
           <grampsjs-app-bar
             .appState="${this.appState}"
             ?saving="${this._saving}"
             ?saveComplete="${this._saveComplete}"
+            ?progress="${this.progress}"
+            ?menuButton="${drawerMode === DRAWER_MODAL}"
+            ?showTreeName="${drawerMode === DRAWER_RAIL}"
+            .pageTitle="${this._pageTitle}"
           ></grampsjs-app-bar>
-          <md-linear-progress
-            ?indeterminate="${this.progress}"
-            class="${this.progress ? 'active' : ''}"
-          ></md-linear-progress>
 
           <main>
             <grampsjs-tab-bar .appState="${this.appState}"></grampsjs-tab-bar>
@@ -640,21 +582,41 @@ export class GrampsJs extends LitElement {
             </grampsjs-pages>
           </main>
         </div>
-      </mwc-drawer>
+      </div>
     `
   }
 
+  // Small screens show the drawer as a modal sheet. Elsewhere it is expanded
+  // or an icon rail, as the user last chose; until they choose, medium
+  // screens start with the rail.
+  get _drawerMode() {
+    const {screenSize} = this.appState
+    if (screenSize === 'small') {
+      return DRAWER_MODAL
+    }
+    const collapsed =
+      this.appState.settings.drawerCollapsed ?? screenSize === 'medium'
+    return collapsed ? DRAWER_RAIL : DRAWER_EXPANDED
+  }
+
   _toggleDrawer() {
-    const drawer = this.shadowRoot.getElementById('app-drawer')
-    if (drawer !== null) {
-      drawer.open = !drawer.open
+    if (this._drawerMode === DRAWER_MODAL) {
+      this._drawerOpen = !this._drawerOpen
+    } else {
+      this.appState.updateSettings({
+        drawerCollapsed: this._drawerMode === DRAWER_EXPANDED,
+      })
     }
   }
 
   _closeDrawer() {
-    const drawer = this.shadowRoot.getElementById('app-drawer')
-    if (drawer !== null && drawer.open) {
-      drawer.open = false
+    this._drawerOpen = false
+  }
+
+  _setScreenSize(screenSize) {
+    if (screenSize !== this.appState.screenSize) {
+      this._drawerOpen = false
+      this._updateAppState({screenSize})
     }
   }
 
@@ -748,71 +710,37 @@ export class GrampsJs extends LitElement {
   }
 
   firstUpdated() {
-    installRouter(location =>
+    installRouter((location, event) => {
       this._loadPage(decodeURIComponent(location.pathname))
-    )
-    installMediaQueryWatcher('(max-width: 991px)', matches => {
-      if (matches && this.appState.screenSize !== 'small') {
-        this._updateAppState({screenSize: 'small'})
+      // a link opens its page at the top; back and forward keep the
+      // position the browser restores
+      if (event?.type === 'click') {
+        window.scrollTo(0, 0)
       }
+    })
+    installMediaQueryWatcher('(max-width: 991px)', matches => {
+      if (matches) this._setScreenSize('small')
     })
     installMediaQueryWatcher(
       '(min-width: 992px) and (max-width: 1199px)',
       matches => {
-        if (matches && this.appState.screenSize !== 'medium') {
-          this._updateAppState({screenSize: 'medium'})
-        }
+        if (matches) this._setScreenSize('medium')
       }
     )
     installMediaQueryWatcher('(min-width: 1200px)', matches => {
-      if (matches && this.appState.screenSize !== 'large') {
-        this._updateAppState({screenSize: 'large'})
-      }
+      if (matches) this._setScreenSize('large')
     })
     this.addEventListener('nav', this._handleNav.bind(this))
+    this.addEventListener('page-title:changed', event => {
+      this._pageTitle = event.detail
+      this._updateTitle()
+    })
     this.addEventListener('grampsjs:error', this._handleError.bind(this))
-    window.addEventListener('beforeprint', this._handleBeforePrint.bind(this))
-    window.addEventListener('afterprint', this._handleAfterPrint.bind(this))
     this.addEventListener(
       'grampsjs:notification',
       this._handleNotification.bind(this)
     )
     window.addEventListener('user:loggedout', this._handleLogout.bind(this))
-  }
-
-  _handleBeforePrint() {
-    const drawer = this.shadowRoot.getElementById('app-drawer')
-    if (!drawer) return
-    this._drawerWasOpen = drawer.open
-    drawer.open = false
-    // Also update mwc-drawer's shadow DOM synchronously — setting drawer.open
-    // only schedules a Lit microtask, which may not run before the browser
-    // captures the print layout.
-    drawer.shadowRoot
-      ?.querySelector('.mdc-drawer')
-      ?.classList.remove('mdc-drawer--open', 'mdc-drawer--animate')
-    const appContent = drawer.shadowRoot?.querySelector(
-      '.mdc-drawer-app-content'
-    )
-    if (appContent) {
-      appContent.style.marginLeft = '0'
-      appContent.style.overflow = 'visible'
-      appContent.style.height = 'auto'
-    }
-  }
-
-  _handleAfterPrint() {
-    const drawer = this.shadowRoot.getElementById('app-drawer')
-    if (!drawer) return
-    const appContent = drawer.shadowRoot?.querySelector(
-      '.mdc-drawer-app-content'
-    )
-    if (appContent) {
-      appContent.style.marginLeft = ''
-      appContent.style.overflow = ''
-      appContent.style.height = ''
-    }
-    drawer.open = this._drawerWasOpen
   }
 
   async _loadFrontendStrings(lang) {
@@ -1003,19 +931,19 @@ export class GrampsJs extends LitElement {
       })
     }
 
-    if (this.appState.screenSize === 'small') {
-      this._closeDrawer()
-    }
+    this._closeDrawer()
   }
 
   _updateTitle() {
     const {page, pageId} = this.appState.path
-    const suffix =
-      this.appState.treeConfig?.[TREE_CONFIG_APP_TITLE] ||
-      this.appState.dbInfo?.database?.name ||
-      'Gramps Web'
+    const suffix = getTreeName(this.appState) || 'Gramps Web'
     if (OBJECT_PAGES.has(page) && pageId) {
       document.title = `${pageId} · ${suffix}`
+      return
+    }
+    const detail = pageTitleDetail(this.appState.path, this._pageTitle)
+    if (detail) {
+      document.title = `${this._(detail)} · ${suffix}`
       return
     }
     const pageTitle = PAGE_TITLES[page]
@@ -1070,6 +998,7 @@ export class GrampsJs extends LitElement {
         window.history.replaceState({}, '', href)
       } else {
         window.history.pushState({}, '', href)
+        window.scrollTo(0, 0)
       }
       this._disableEditMode()
     }
@@ -1205,11 +1134,6 @@ export class GrampsJs extends LitElement {
     snackbar.show({message, ...options})
   }
 
-  _openUserMenu() {
-    const userMenu = this.shadowRoot.getElementById('user-menu')
-    userMenu.open = true
-  }
-
   _handleLogout(e) {
     this._metadataConfirmed = false
     // On an OIDC logout the browser is about to leave for the identity
@@ -1327,7 +1251,7 @@ export class GrampsJs extends LitElement {
     } else if (e.key === 'n') {
       this._shortcutPressed = 'n'
     } else if (e.key === 's') {
-      fireEvent(this, 'nav', {path: 'search'})
+      fireEvent(window, 'search:focus')
     } else if (e.key === 'e') {
       fireEvent(this, 'edit-mode:toggle')
     } else if (e.key === '?') {

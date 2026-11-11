@@ -43,7 +43,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
         .header {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: flex-end;
           flex-wrap: wrap;
           gap: 0.5em;
           margin-bottom: 1.5em;
@@ -63,7 +63,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
         }
 
         .empty-state {
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         md-list-item[type='button'] {
@@ -79,7 +79,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
         }
 
         dt {
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
           font-weight: 500;
         }
 
@@ -165,7 +165,6 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
   renderContent() {
     return html`
       <div class="header">
-        <h2>${this._('Notifications')}</h2>
         <md-outlined-button
           ?disabled="${this._notifications.length === 0}"
           @click="${() => this.appState?.clearNotifications()}"

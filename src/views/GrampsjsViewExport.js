@@ -55,7 +55,6 @@ export class GrampsjsViewExport extends GrampsjsView {
 
   renderContent() {
     return html`
-      <h2>${this._('Export')}</h2>
       <h3>${this._('Export your family tree')}</h3>
 
       ${this.data.length === 0

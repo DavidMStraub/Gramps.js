@@ -21,8 +21,7 @@ class GrampsjsDnaTabBar extends GrampsjsAppStateMixin(LitElement) {
       sharedStyles,
       css`
         md-tabs {
-          margin: 20px;
-          margin-bottom: 40px;
+          margin: 0 20px 40px;
           width: max-content;
           max-width: 100%;
         }
@@ -30,6 +29,7 @@ class GrampsjsDnaTabBar extends GrampsjsAppStateMixin(LitElement) {
         md-primary-tab {
           flex: 0 0 auto;
           width: auto;
+          --md-primary-tab-label-text-size: 14px;
         }
       `,
     ]

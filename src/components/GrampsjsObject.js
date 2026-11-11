@@ -229,6 +229,12 @@ export class GrampsjsObject extends GrampsjsAppStateMixin(LitElement) {
           min-width: 0;
         }
 
+        /* the object's toolbar, at the end of the heading's first line */
+        .profile > .actions {
+          float: right;
+          margin: 12px 0 0 16px;
+        }
+
         .content-wrapper {
           display: flex;
           margin-top: 30px;
@@ -265,7 +271,7 @@ export class GrampsjsObject extends GrampsjsAppStateMixin(LitElement) {
           margin-bottom: 1.5rem;
           font-size: 24px;
           padding-bottom: 12px;
-          border-bottom: 1px solid var(--md-sys-color-outline-variant);
+          border-bottom: 1px solid var(--grampsjs-divider-color);
         }
 
         .section * {
@@ -398,6 +404,7 @@ export class GrampsjsObject extends GrampsjsAppStateMixin(LitElement) {
       data: {type: Object},
       edit: {type: Boolean},
       preview: {type: Boolean},
+      actions: {attribute: false},
       dialogContent: {type: String},
       _objectsName: {type: String},
       _objectEndpoint: {type: String},
@@ -412,6 +419,7 @@ export class GrampsjsObject extends GrampsjsAppStateMixin(LitElement) {
     this.data = {}
     this.edit = false
     this.preview = false
+    this.actions = ''
     this.dialogContent = ''
     this._objectsName = 'Objects'
     this._objectIcon = ''
@@ -477,7 +485,12 @@ export class GrampsjsObject extends GrampsjsAppStateMixin(LitElement) {
 
       <div class="header">
         <div id="picture">${this.renderPicture()}</div>
-        <div class="profile">${this.renderProfile()}</div>
+        <div class="profile">
+          ${this.actions
+            ? html`<div class="actions">${this.actions}</div>`
+            : ''}
+          ${this.renderProfile()}
+        </div>
       </div>
 
       <div class="tags">${this.renderTags()}</div>

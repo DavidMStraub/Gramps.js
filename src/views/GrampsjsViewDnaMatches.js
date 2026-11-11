@@ -9,7 +9,6 @@ import '../components/GrampsjsDnaMatches.js'
 import '../components/GrampsjsDnaMatch.js'
 import '../components/GrampsjsFormNewMatch.js'
 import '../components/GrampsjsChromosomeBrowser.js'
-import '../components/GrampsjsBreadcrumbs.js'
 import '../components/GrampsjsSvgDownloadButton.js'
 
 import {GrampsjsViewDnaBase} from './GrampsjsViewDnaBase.js'
@@ -55,18 +54,18 @@ export class GrampsjsViewDnaMatches extends GrampsjsViewDnaBase {
 
   renderFab() {
     return this.grampsIdMatch
-      ? html`<md-fab variant="secondary" @click=${this._handleClickEdit}>
+      ? html`<md-fab variant="primary" @click=${this._handleClickEdit}>
           <grampsjs-icon
             slot="icon"
             .path="${mdiPencil}"
-            color="var(--mdc-theme-on-secondary)"
+            color="currentColor"
           ></grampsjs-icon>
         </md-fab>`
-      : html`<md-fab variant="secondary" @click=${this._handleClickAdd}>
+      : html`<md-fab variant="primary" @click=${this._handleClickAdd}>
           <grampsjs-icon
             slot="icon"
             .path="${mdiPlus}"
-            color="var(--mdc-theme-on-secondary)"
+            color="currentColor"
           ></grampsjs-icon>
         </md-fab>`
   }

@@ -319,7 +319,7 @@ class GrampsjsEditor extends GrampsjsAppStateMixin(LitElement) {
           align-items: center;
           justify-content: space-between;
           font-size: 13px;
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .draft-banner-content {
@@ -331,7 +331,7 @@ class GrampsjsEditor extends GrampsjsAppStateMixin(LitElement) {
 
         .draft-banner-content grampsjs-icon {
           --grampsjs-icon-size: 18px;
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .draft-banner-actions {

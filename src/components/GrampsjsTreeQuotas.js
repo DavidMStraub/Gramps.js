@@ -36,7 +36,7 @@ export class GrampsjsTreeQuotas extends GrampsjsConnectedComponent {
         th,
         td {
           font-size: 14px;
-          font-weight: 300;
+          font-weight: var(--grampsjs-font-weight-body);
           height: 20px;
           padding-bottom: 10px;
           padding-top: 10px;
@@ -47,7 +47,7 @@ export class GrampsjsTreeQuotas extends GrampsjsConnectedComponent {
 
         th {
           font-weight: 450;
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
           text-align: right;
         }
 

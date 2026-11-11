@@ -1,11 +1,7 @@
 import {css, html} from 'lit'
-import '@material/web/iconbutton/icon-button.js'
 import '@material/web/button/filled-button.js'
 
-import {mdiArrowLeft} from '@mdi/js'
-
 import {GrampsjsView} from './GrampsjsView.js'
-import '../components/GrampsjsIcon.js'
 import '../components/GrampsjsReportOptions.js'
 import '../components/GrampsjsTaskProgressIndicator.js'
 import {getExporterDownloadUrl} from '../api.js'
@@ -20,6 +16,10 @@ export class GrampsjsViewReport extends GrampsjsView {
       css`
         :host {
           padding-bottom: 2em;
+        }
+
+        .description {
+          margin-top: 0;
         }
       `,
     ]
@@ -68,33 +68,9 @@ export class GrampsjsViewReport extends GrampsjsView {
       return ''
     }
     return html`
-      <h2>
-        <md-icon-button
-          aria-label="${this._('_Back')}"
-          @click="${this._handleBack}"
-        >
-          <grampsjs-icon
-            path="${mdiArrowLeft}"
-            color="var(--mdc-theme-primary)"
-          ></grampsjs-icon>
-        </md-icon-button>
-        ${this._(this.data.name)}
-      </h2>
-      <dl style="clear:left;">
-        <div>
-          <dt>${this._('Description')}</dt>
-          <dd>${this._(this.data.description)}</dd>
-        </div>
-        <div>
-          <dt>${this._('Author')}</dt>
-          <dd>${(this.data.authors ?? []).join(', ')}</dd>
-        </div>
-        <div>
-          <dt>${this._('Version')}</dt>
-          <dd>${this.data.version}</dd>
-        </div>
-      </dl>
-      <div style="clear:left;"></div>
+      ${this.data.description
+        ? html`<p class="description">${this._(this.data.description)}</p>`
+        : ''}
 
       <h3>${this._('Options')}</h3>
 
@@ -135,6 +111,11 @@ export class GrampsjsViewReport extends GrampsjsView {
     if ('data' in data) {
       this.error = false
       this.data = data.data
+      fireEvent(this, 'page-title:changed', {
+        page: 'report',
+        pageId: reportId,
+        title: this.data.name,
+      })
     } else if ('error' in data) {
       // Allow a retry on the next visit.
       this._requestedReportId = ''
@@ -245,10 +226,6 @@ export class GrampsjsViewReport extends GrampsjsView {
 
   _handleOptionsChanged(e) {
     this._options = {...e.detail}
-  }
-
-  _handleBack() {
-    fireEvent(this, 'nav', {path: 'reports'})
   }
 }
 

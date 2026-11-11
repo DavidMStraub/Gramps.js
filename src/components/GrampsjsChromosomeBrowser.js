@@ -41,7 +41,7 @@ export class GrampsjsChromosomeBrowser extends GrampsjsAppStateMixin(
           flex: 0 1 auto;
           padding: 0;
           font-size: 15px;
-          font-weight: 330;
+          font-weight: var(--grampsjs-font-weight-body);
           margin-left: 20px;
         }
 
@@ -68,7 +68,7 @@ export class GrampsjsChromosomeBrowser extends GrampsjsAppStateMixin(
 
         span.total {
           margin-left: 6px;
-          color: var(--grampsjs-body-font-color-50);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         rect.segment {

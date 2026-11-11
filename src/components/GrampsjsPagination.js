@@ -30,7 +30,7 @@ class GrampsjsPagination extends GrampsjsAppStateMixin(LitElement) {
           margin-bottom: 88px;
           font-size: 14px;
           font-weight: 400;
-          color: var(--grampsjs-body-font-color-60);
+          color: var(--grampsjs-text-secondary-color);
         }
 
         .range {

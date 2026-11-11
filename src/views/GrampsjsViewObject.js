@@ -11,61 +11,12 @@ import {GrampsjsView} from './GrampsjsView.js'
 import {
   fireEvent,
   moveTo,
-  objectIconPath,
   objectTypeToEndpoint,
   changeParticipantRefs,
   toWritableObject,
 } from '../util.js'
 import {clearDraftsWithPrefix} from '../api.js'
-import '../components/GrampsjsBreadcrumbs.js'
-
-const BREADCRUMB_META = {
-  person: {
-    objectsName: 'People',
-    objectIcon: objectIconPath.person,
-    objectEndpoint: 'people',
-  },
-  family: {
-    objectsName: 'Families',
-    objectIcon: objectIconPath.family,
-    objectEndpoint: 'families',
-  },
-  place: {
-    objectsName: 'Places',
-    objectIcon: objectIconPath.place,
-    objectEndpoint: 'places',
-  },
-  event: {
-    objectsName: 'Events',
-    objectIcon: objectIconPath.event,
-    objectEndpoint: 'events',
-  },
-  citation: {
-    objectsName: 'Citations',
-    objectIcon: objectIconPath.citation,
-    objectEndpoint: 'citations',
-  },
-  source: {
-    objectsName: 'Sources',
-    objectIcon: objectIconPath.source,
-    objectEndpoint: 'sources',
-  },
-  repository: {
-    objectsName: 'Repositories',
-    objectIcon: objectIconPath.repository,
-    objectEndpoint: 'repositories',
-  },
-  media: {
-    objectsName: 'Media Objects',
-    objectIcon: objectIconPath.media,
-    objectEndpoint: 'media',
-  },
-  note: {
-    objectsName: 'Notes',
-    objectIcon: objectIconPath.note,
-    objectEndpoint: 'notes',
-  },
-}
+import '../components/GrampsjsObjectActions.js'
 
 const editTitle = {
   person: 'Edit Person',
@@ -136,18 +87,17 @@ export class GrampsjsViewObject extends GrampsjsView {
     return ''
   }
 
-  renderBreadcrumbs() {
-    const meta = BREADCRUMB_META[this._className]
-    if (!meta) return html``
+  // The object's toolbar, which the object element shows next to its heading
+  renderActions() {
+    const endpoint = objectTypeToEndpoint[this._className]
+    if (!endpoint) return ''
     return html`
-      <grampsjs-breadcrumbs
+      <grampsjs-object-actions
         .data="${this._data}"
         .appState="${this.appState}"
         ?edit="${this.edit}"
-        objectsName="${meta.objectsName}"
-        .objectIcon="${meta.objectIcon}"
-        objectEndpoint="${meta.objectEndpoint}"
-      ></grampsjs-breadcrumbs>
+        objectEndpoint="${endpoint}"
+      ></grampsjs-object-actions>
     `
   }
 
@@ -159,7 +109,7 @@ export class GrampsjsViewObject extends GrampsjsView {
       return html``
     }
     return html`
-      ${this.renderBreadcrumbs()} ${this.renderElement()}
+      ${this.renderElement()}
       ${this.canEdit && !this.edit ? this.renderFab() : ''}
       ${this.editDialogContent}
     `
@@ -167,11 +117,11 @@ export class GrampsjsViewObject extends GrampsjsView {
 
   renderFab() {
     return html`
-      <md-fab variant="secondary" @click="${this._activateEditMode}">
+      <md-fab variant="primary" @click="${this._activateEditMode}">
         <grampsjs-icon
           slot="icon"
           .path="${mdiPencil}"
-          color="var(--mdc-theme-on-secondary)"
+          color="currentColor"
         ></grampsjs-icon>
       </md-fab>
     `
