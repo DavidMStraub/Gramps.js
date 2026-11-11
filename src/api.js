@@ -758,6 +758,29 @@ export function getExporterDownloadUrl(url) {
   return `${__APIHOST__}${url}?jwt=${jwt}`
 }
 
+/**
+ * Whether a task result URL points to a finished export or media archive,
+ * the files the UI offers to download with the access token.
+ */
+export function isExportDownloadUrl(url) {
+  return (
+    typeof url === 'string' &&
+    (url.startsWith('/api/exporters/') || url.startsWith('/api/media/archive/'))
+  )
+}
+
+/**
+ * Downloads an export file through `anchor`, an `<a>` in the caller's
+ * template. The URL carries the access token, so the token is refreshed
+ * first.
+ */
+export async function downloadExportFile(appState, anchor, url, fileName) {
+  await appState.refreshTokenIfNeeded()
+  anchor.href = getExporterDownloadUrl(url)
+  anchor.download = fileName
+  anchor.click()
+}
+
 export function getTileUrl(handle, checksum = null) {
   const jwt = localStorage.getItem('access_token')
   const base = `${__APIHOST__}/api/media/${handle}/tile/{z}/{x}/{y}`
