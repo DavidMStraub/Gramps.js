@@ -117,11 +117,13 @@ export class GrampsjsBlogPost extends GrampsjsAppStateMixin(LitElement) {
         <div id="note">
           <div id="note-wrapper">
             <grampsjs-note-content
-              grampsId="${this.note.grampsId}"
+              grampsId="${this.note?.grampsId}"
               .inlineMedia="${this._inlineMedia}"
-              content="${this.note?.formatted?.html ||
-              this.note?.text?.string ||
-              'Error loading note'}"
+              content="${this.note
+                ? this.note.formatted?.html ||
+                  this.note.text?.string ||
+                  'Error loading note'
+                : ''}"
             >
             </grampsjs-note-content>
 
