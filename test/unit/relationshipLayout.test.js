@@ -345,8 +345,8 @@ describe('layoutRelationships', () => {
     const markers = nodes.filter(n => n.bracket)
     expect(markers).toHaveLength(2)
     for (const marker of markers) {
-      // The bottom of the ring, relative to the node, is 35 + 6 pixels down
-      expect(marker.y + 41).toBeLessThanOrEqual(bounds.yMax)
+      // The bottom of the family node, relative to the node, is 12 pixels down
+      expect(marker.y + 12).toBeLessThanOrEqual(bounds.yMax)
     }
   })
 
@@ -433,7 +433,7 @@ describe('layoutRelationships', () => {
 function routeProblems({nodes, links, bounds}) {
   const [boxWidth, boxHeight, eps] = [190, 90, 0.01]
   const problems = []
-  const marker = familyMarkerPosition(boxHeight)
+  const marker = familyMarkerPosition
   const cards = nodes.filter(node => node.kind === 'person')
   const horizontals = []
   const verticals = []

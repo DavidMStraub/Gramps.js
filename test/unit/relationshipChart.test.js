@@ -9,6 +9,7 @@ const childRef = (ref, frel = 'Birth', mrel = 'Birth') => ({ref, frel, mrel})
 
 const family = (handle, father, mother, children, type = 'Married') => ({
   handle,
+  gramps_id: `F_${handle}`,
   type,
   father_handle: father,
   mother_handle: mother,
@@ -187,6 +188,66 @@ describe('RelationshipChart', () => {
     expect(married.sort()).toEqual(['family:fA', 'family:fFM', 'family:fRT'])
   })
 
+  it('gives every family a chip', async () => {
+    const chart = new RelationshipChart()
+    chart.update(await layoutRelationships(graph, 'R'), size)
+    const families = [...chart.node.querySelectorAll('.node.family')]
+    expect(
+      families.map(node => node.querySelectorAll('.family-chip').length)
+    ).toEqual(families.map(() => 1))
+  })
+
+  it('joins adjacent partners with a line, and others with a bracket', async () => {
+    const chart = new RelationshipChart()
+    chart.update(await layoutRelationships(graph, 'R'), size)
+    const families = [...chart.node.querySelectorAll('.node.family')]
+    for (const node of families) {
+      const bracket = Boolean(node.__data__.bracket)
+      expect(node.querySelectorAll('.partner-line')).toHaveLength(
+        bracket ? 0 : 1
+      )
+      expect(node.querySelectorAll('.bracket')).toHaveLength(bracket ? 1 : 0)
+    }
+  })
+
+  it('dashes the chips of couples who are not married', async () => {
+    const chart = new RelationshipChart()
+    chart.update(await layoutRelationships(graph, 'R'), size)
+    const dashed = key =>
+      nodeWithKey(chart, key)
+        .querySelector('.family-chip')
+        .hasAttribute('stroke-dasharray')
+    expect(dashed('family:fRS')).toBe(true)
+    expect(dashed('family:fRT')).toBe(false)
+  })
+
+  const clickChip = (chart, key) => {
+    const shown = []
+    const listener = e => shown.push(e.detail)
+    window.addEventListener('object:preview-show', listener)
+    nodeWithKey(chart, key)
+      .querySelector('.family-chip')
+      .dispatchEvent(new MouseEvent('click', {bubbles: true}))
+    window.removeEventListener('object:preview-show', listener)
+    return shown
+  }
+
+  it('pins the family preview on a click', async () => {
+    const chart = new RelationshipChart()
+    chart.update(await layoutRelationships(graph, 'R'), size)
+    expect(clickChip(chart, 'family:fRS')).toMatchObject([
+      {objectType: 'family', grampsId: 'F_fRS', pinned: true},
+    ])
+  })
+
+  it('opens no family preview in edit mode', async () => {
+    const chart = new RelationshipChart()
+    const layout = await layoutRelationships(graph, 'R')
+    chart.update(layout, size)
+    chart.update(layout, {...size, canEdit: true})
+    expect(clickChip(chart, 'family:fRS')).toEqual([])
+  })
+
   it('keeps nodes and cards when only the container size changes', async () => {
     const chart = new RelationshipChart()
     const layout = await layoutRelationships(graph, 'R')
@@ -284,7 +345,7 @@ describe('RelationshipChart', () => {
     expect(d).toBeGreaterThan(h)
     // Up from the marker, across above the cards and down into D's card
     const points = pathPoints(link.getAttribute('d'))
-    expect(points[0][1]).toBeCloseTo(35)
+    expect(points[0][1]).toBeCloseTo(0)
     expect(Math.min(...points.map(([, y]) => y))).toBeCloseTo(-65)
     expectClose(points.at(-1), [d, -45])
   })
