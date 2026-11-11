@@ -588,14 +588,18 @@ export async function apiGetOIDCConfig() {
   }
 }
 
-export async function apiOIDCLogin(providerId) {
+// `tree` names the tree a new account is created in; multi-tree servers
+// need it for identities that are not linked to an account yet.
+export async function apiOIDCLogin(providerId, tree = '') {
   try {
     if (!providerId) {
       throw new Error('Provider ID is required')
     }
-    window.location.href = `${__APIHOST__}/api/oidc/login/?provider=${encodeURIComponent(
-      providerId
-    )}`
+    const params = new URLSearchParams({provider: providerId})
+    if (tree) {
+      params.append('tree', tree)
+    }
+    window.location.href = `${__APIHOST__}/api/oidc/login/?${params}`
     return {success: true}
   } catch (error) {
     return {error: error.message}
