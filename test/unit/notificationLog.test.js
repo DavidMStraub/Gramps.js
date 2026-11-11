@@ -1,4 +1,4 @@
-import {describe, it, expect} from 'vitest'
+import {describe, it, expect, vi} from 'vitest'
 import {GrampsjsViewNotificationLog} from '../../src/views/GrampsjsViewNotificationLog.js'
 
 const makeLog = () => {
@@ -45,5 +45,68 @@ describe('notification log: task entries', () => {
     expect(
       log._failureMessage({source: 'api', type: 'error', detail: {info: 'a'}})
     ).toBe('')
+  })
+})
+
+describe('notification log: export downloads', () => {
+  const finished = detail => ({source: 'task', type: 'success', detail})
+  const gramps = finished({
+    file_name: 'abc.gramps',
+    file_type: '.gramps',
+    messages: [],
+    url: '/api/exporters/gramps/file/processed/abc.gramps',
+  })
+  const media = finished({
+    file_name: 'def.zip',
+    file_size: 10,
+    url: '/api/media/archive/def.zip',
+  })
+
+  it('offers finished exports and media archives for download', () => {
+    const log = makeLog()
+
+    expect(log._downloadUrl(gramps)).toBe(
+      '/api/exporters/gramps/file/processed/abc.gramps'
+    )
+    expect(log._downloadUrl(media)).toBe('/api/media/archive/def.zip')
+  })
+
+  it('offers no download for other notifications', () => {
+    const log = makeLog()
+
+    expect(log._downloadUrl(finished({url: 'https://example.com/x'}))).toBe('')
+    expect(log._downloadUrl(finished({url: '/api/people/'}))).toBe('')
+    expect(log._downloadUrl(finished({}))).toBe('')
+    expect(log._downloadUrl({...gramps, type: 'error'})).toBe('')
+    expect(log._downloadUrl({...gramps, source: 'api'})).toBe('')
+  })
+
+  it('names the files like the Export page', () => {
+    const log = makeLog()
+
+    expect(log._downloadFileName(gramps)).toBe('grampsweb-export.gramps')
+    expect(log._downloadFileName(media)).toBe('grampsweb-media-export.zip')
+    expect(
+      log._downloadFileName(
+        finished({file_name: 'x.ged', url: '/api/exporters/ged/file/x.ged'})
+      )
+    ).toBe('x.ged')
+  })
+
+  it('downloads with a fresh token', async () => {
+    const log = makeLog()
+    log.appState.refreshTokenIfNeeded = vi.fn().mockResolvedValue(undefined)
+    const anchor = document.createElement('a')
+    anchor.click = vi.fn()
+    log.renderRoot = {querySelector: () => anchor}
+
+    await log._download(media)
+
+    expect(log.appState.refreshTokenIfNeeded).toHaveBeenCalled()
+    expect(anchor.getAttribute('href')).toMatch(
+      /\/api\/media\/archive\/def\.zip\?jwt=/
+    )
+    expect(anchor.download).toBe('grampsweb-media-export.zip')
+    expect(anchor.click).toHaveBeenCalled()
   })
 })

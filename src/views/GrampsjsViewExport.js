@@ -2,12 +2,13 @@ import {css, html} from 'lit'
 import '@material/web/select/filled-select'
 import '@material/web/select/select-option'
 import '@material/web/button/filled-button'
-import {mdiAlertOutline} from '@mdi/js'
+import '@material/web/button/outlined-button'
+import {mdiAlertOutline, mdiDownload} from '@mdi/js'
 
 import {GrampsjsView} from './GrampsjsView.js'
 import '../components/GrampsjsIcon.js'
 import '../components/GrampsjsImportExportReport.js'
-import {getExporterDownloadUrl, getPermissions} from '../api.js'
+import {downloadExportFile, getPermissions} from '../api.js'
 import {formatRateLimit} from '../util.js'
 import {awaitTaskResponse} from '../taskResponse.js'
 
@@ -80,7 +81,7 @@ export class GrampsjsViewExport extends GrampsjsView {
             </md-filled-select>
           `}
       ${this._getDescription()} ${this._renderWarning()}
-      <p>
+      <p class="button-row">
         <md-filled-button
           @click="${this._generateExport}"
           ?disabled="${!this._formData.exporter}"
@@ -89,18 +90,10 @@ export class GrampsjsViewExport extends GrampsjsView {
         <grampsjs-task-progress-indicator
           id="indicator-export"
           taskName="exportFile"
-          class="button"
           size="20"
           .appState="${this.appState}"
         ></grampsjs-task-progress-indicator>
-        <a
-          download="${this._getFileName()}"
-          href="${this._downloadUrl
-            ? getExporterDownloadUrl(this._downloadUrl)
-            : ''}"
-          id="downloadanchor"
-          >&nbsp;</a
-        >
+        ${this._renderDownloadButton(this._downloadUrl, this._getFileName())}
       </p>
       <grampsjs-import-export-report
         .appState="${this.appState}"
@@ -114,27 +107,56 @@ export class GrampsjsViewExport extends GrampsjsView {
       <p>${this._('Generate a ZIP archive with all media files.')}</p>
 
       ${this._renderWarning()}
-      <p>
+      <p class="button-row">
         <md-filled-button @click="${this._generateMediaArchive}"
           >${this._('_Generate')}</md-filled-button
         >
         <grampsjs-task-progress-indicator
           id="indicator-media"
           taskName="exportMedia"
-          class="button"
           size="20"
           .appState="${this.appState}"
         ></grampsjs-task-progress-indicator>
-        <a
-          download="grampsweb-media-export.zip"
-          href="${this._mediaDownloadUrl
-            ? getExporterDownloadUrl(this._mediaDownloadUrl)
-            : ''}"
-          id="downloadanchor-media"
-          >&nbsp;</a
-        >
+        ${this._renderDownloadButton(
+          this._mediaDownloadUrl,
+          'grampsweb-media-export.zip'
+        )}
       </p>
+      <a
+        id="downloadanchor"
+        aria-hidden="true"
+        href="#"
+        style="display:none"
+        download
+      ></a>
     `
+  }
+
+  _renderDownloadButton(url, fileName) {
+    if (!url) {
+      return ''
+    }
+    return html`
+      <md-outlined-button @click="${() => this._download(url, fileName)}">
+        <grampsjs-icon
+          slot="icon"
+          path="${mdiDownload}"
+          color="currentColor"
+          height="18"
+          width="18"
+        ></grampsjs-icon>
+        ${this._('Download')}
+      </md-outlined-button>
+    `
+  }
+
+  _download(url, fileName) {
+    return downloadExportFile(
+      this.appState,
+      this.renderRoot.querySelector('#downloadanchor'),
+      url,
+      fileName
+    )
   }
 
   _renderWarning() {
@@ -181,18 +203,11 @@ export class GrampsjsViewExport extends GrampsjsView {
   _handleSelect(e) {
     this._formData = {...this._formData, exporter: e.target.value}
     this._messages = []
+    this._downloadUrl = ''
     this._exportOp = null
     const prog = this.renderRoot.querySelector('#indicator-export')
     prog.reset()
     prog.open = false
-  }
-
-  _startDownload() {
-    this.shadowRoot.querySelector('#downloadanchor').click()
-  }
-
-  _startMediaDownload() {
-    this.shadowRoot.querySelector('#downloadanchor-media').click()
   }
 
   _getQueryUrl() {
@@ -274,16 +289,6 @@ export class GrampsjsViewExport extends GrampsjsView {
     super.firstUpdated()
     const permissions = getPermissions()
     this._viewPrivate = permissions.includes('ViewPrivate')
-  }
-
-  updated(changed) {
-    super.updated(changed)
-    if (changed.has('_downloadUrl') && this._downloadUrl) {
-      this._startDownload()
-    }
-    if (changed.has('_mediaDownloadUrl') && this._mediaDownloadUrl) {
-      this._startMediaDownload()
-    }
   }
 
   _onLangChanged() {

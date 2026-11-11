@@ -298,13 +298,73 @@ describe('export view: report messages', () => {
     expect(element._messages).toEqual([])
   })
 
-  it('clears messages when another exporter is selected', () => {
+  it('clears messages and the finished file when another exporter is selected', () => {
     const element = makeExport(vi.fn())
     element._messages = ['old']
+    element._downloadUrl = '/api/exporters/gramps/file/processed/x.gramps'
 
-    element._handleSelect({target: {value: 'gramps'}})
+    element._handleSelect({target: {value: 'ged'}})
 
     expect(element._messages).toEqual([])
+    expect(element._downloadUrl).toBe('')
+  })
+})
+
+describe('export view: download buttons', () => {
+  const mountExport = async () => {
+    const el = await mount('grampsjs-view-export', {
+      appState: {
+        apiGet: vi.fn().mockResolvedValue({data: []}),
+        refreshTokenIfNeeded: vi.fn().mockResolvedValue(undefined),
+        i18n: {strings: {}},
+      },
+    })
+    el.active = true
+    await el.updateComplete
+    return el
+  }
+  const buttons = el =>
+    [...el.renderRoot.querySelectorAll('md-outlined-button')].map(b =>
+      b.textContent.trim()
+    )
+
+  it('shows a download button only for finished files', async () => {
+    const el = await mountExport()
+    expect(buttons(el)).toEqual([])
+
+    el._downloadUrl = '/api/exporters/gramps/file/processed/x.gramps'
+    el._mediaDownloadUrl = '/api/media/archive/y.zip'
+    await el.updateComplete
+
+    expect(buttons(el)).toEqual(['Download', 'Download'])
+  })
+
+  it('does not start the download on its own', async () => {
+    const el = await mountExport()
+    const click = vi.fn()
+    el.renderRoot.querySelector('#downloadanchor').click = click
+
+    el._mediaDownloadUrl = '/api/media/archive/y.zip'
+    await el.updateComplete
+
+    expect(click).not.toHaveBeenCalled()
+  })
+
+  it('downloads with a fresh token when the button is clicked', async () => {
+    const el = await mountExport()
+    const anchor = el.renderRoot.querySelector('#downloadanchor')
+    anchor.click = vi.fn()
+    el._mediaDownloadUrl = '/api/media/archive/y.zip'
+    await el.updateComplete
+
+    el.renderRoot.querySelector('md-outlined-button').click()
+    await vi.waitFor(() => expect(anchor.click).toHaveBeenCalled())
+
+    expect(el.appState.refreshTokenIfNeeded).toHaveBeenCalled()
+    expect(anchor.getAttribute('href')).toMatch(
+      /\/api\/media\/archive\/y\.zip\?jwt=/
+    )
+    expect(anchor.download).toBe('grampsweb-media-export.zip')
   })
 })
 

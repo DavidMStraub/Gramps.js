@@ -17,6 +17,7 @@ import {
 } from '@mdi/js'
 
 import {GrampsjsView} from './GrampsjsView.js'
+import {downloadExportFile, isExportDownloadUrl} from '../api.js'
 import '../components/GrampsjsIcon.js'
 import '../components/GrampsjsTimedelta.js'
 import '../components/GrampsjsTaskProgressIndicator.js'
@@ -300,19 +301,68 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
                       width="20"
                     ></grampsjs-icon>
                   </md-icon-button>
-                  <md-text-button
-                    @click="${() => {
-                      this._selectedNotification = null
-                    }}"
-                  >
-                    ${this._('Close')}
-                  </md-text-button>
+                  <div>
+                    ${this._downloadUrl(this._selectedNotification)
+                      ? html`<md-text-button
+                          @click="${() =>
+                            this._download(this._selectedNotification)}"
+                        >
+                          ${this._('Download')}
+                        </md-text-button>`
+                      : ''}
+                    <md-text-button
+                      @click="${() => {
+                        this._selectedNotification = null
+                      }}"
+                    >
+                      ${this._('Close')}
+                    </md-text-button>
+                  </div>
                 </div>
               </div>
             </md-dialog>
           `
         : ''}
+      <a
+        id="downloadanchor"
+        aria-hidden="true"
+        href="#"
+        style="display:none"
+        download
+      ></a>
     `
+  }
+
+  // The file URL of a finished export or media archive, else ''.
+  // eslint-disable-next-line class-methods-use-this
+  _downloadUrl(n) {
+    if (n?.source !== 'task' || n.type !== 'success') {
+      return ''
+    }
+    const url = n.detail?.url
+    return isExportDownloadUrl(url) ? url : ''
+  }
+
+  // Matches the file names the Export page uses.
+  // eslint-disable-next-line class-methods-use-this
+  _downloadFileName(n) {
+    const {url, file_type: fileType, file_name: fileName} = n.detail
+    if (url.startsWith('/api/media/archive/')) {
+      return 'grampsweb-media-export.zip'
+    }
+    if (typeof fileType === 'string' && fileType) {
+      return `grampsweb-export${fileType}`
+    }
+    return fileName || ''
+  }
+
+  _download(n) {
+    return downloadExportFile(
+      this.appState,
+      this.renderRoot.querySelector('#downloadanchor'),
+      this._downloadUrl(n),
+      this._downloadFileName(n)
+    )
   }
 
   async _copyDetail(detail) {
