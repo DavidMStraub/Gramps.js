@@ -9,8 +9,12 @@ optional `pillLabel` for its pills, and an `editor` for its rules:
   and `numArgs` place the value among them
 - 'mime', 'objectType': one rule `rule` with parameters
 - 'tags': one `HasTag` rule per selected tag
-- 'checkboxes': rules without parameters, one per checked `entries` item,
-  each an object `{label, rule}`
+- 'checkboxes': fixed rules, one per checked `entries` item,
+  each an object `{label, rule}`; their pills show the entry label alone,
+  or after the section's `pillLabel` if it has one
+
+A section with `local: true` filters the loaded list in the view. Its rules
+are never sent to the server, reported as `localFilters` next to `filters`.
 
 All builders take the translation function `_` and return translated labels.
 
@@ -178,7 +182,7 @@ export function ruleSummary(_, section, rule) {
 
 export function pillLabel(_, section, rule) {
   const summary = ruleSummary(_, section, rule)
-  return section.editor === 'checkboxes'
+  return section.editor === 'checkboxes' && !section.pillLabel
     ? summary
     : `${section.pillLabel ?? section.label}: ${summary}`
 }

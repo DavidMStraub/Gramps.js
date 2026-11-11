@@ -101,10 +101,83 @@ function priorityRank(task) {
   return priorityLabel(priority) ? Number(priority) : NO_PRIORITY
 }
 
-// By status, then with the highest priority first. The sort is stable, so
-// tasks that tie keep their order.
-export function sortTasks(tasks) {
-  return [...tasks].sort(
-    (a, b) => statusRank(a) - statusRank(b) || priorityRank(a) - priorityRank(b)
+const byStatus = (a, b) => statusRank(a) - statusRank(b)
+const byPriority = (a, b) => priorityRank(a) - priorityRank(b)
+
+// the orders of the task list, by key, with their labels; Last changed
+// shows the newest first
+export const TASK_SORT_ORDERS = {
+  status: {
+    label: 'Status',
+    compare: (a, b) => byStatus(a, b) || byPriority(a, b),
+  },
+  priority: {
+    label: 'Priority',
+    compare: (a, b) => byPriority(a, b) || byStatus(a, b),
+  },
+  title: {
+    label: 'Title',
+    compare: (a, b, locale) =>
+      (a.title ?? '').localeCompare(b.title ?? '', locale),
+  },
+  change: {
+    label: 'Last changed',
+    compare: (a, b) => (b.change ?? 0) - (a.change ?? 0),
+  },
+}
+
+// Sorts by one of TASK_SORT_ORDERS, by status and then with the highest
+// priority first by default. The sort is stable, so tasks that tie keep
+// their order.
+export function sortTasks(tasks, key = 'status', locale = undefined) {
+  const {compare} = TASK_SORT_ORDERS[key] ?? TASK_SORT_ORDERS.status
+  return [...tasks].sort((a, b) => compare(a, b, locale))
+}
+
+// Filter sections of the task list, which filter the loaded tasks. Their
+// rules are {name: 'Status' | 'Priority', values: [label]}.
+export function taskStatusFilter(_) {
+  return {
+    id: 'taskStatus',
+    label: _('Status'),
+    pillLabel: _('Status'),
+    editor: 'checkboxes',
+    local: true,
+    entries: TASK_STATUSES.map(status => ({
+      label: _(status),
+      rule: {name: 'Status', values: [status]},
+    })),
+  }
+}
+
+export function taskPriorityFilter(_) {
+  return {
+    id: 'taskPriority',
+    label: _('Priority'),
+    pillLabel: _('Priority'),
+    editor: 'checkboxes',
+    local: true,
+    entries: TASK_PRIORITIES.map(({label}) => ({
+      label: _(label),
+      rule: {name: 'Priority', values: [label]},
+    })),
+  }
+}
+
+function ruleValues(rules, name) {
+  return rules.filter(rule => rule.name === name).map(rule => rule.values[0])
+}
+
+// The tasks with any of the filtered statuses and any of the filtered
+// priorities
+export function filterTasks(tasks, rules) {
+  const statuses = ruleValues(rules, 'Status')
+  const priorities = ruleValues(rules, 'Priority')
+  return tasks.filter(
+    task =>
+      (statuses.length === 0 ||
+        statuses.includes(taskAttribute(task, 'Status'))) &&
+      (priorities.length === 0 ||
+        priorities.includes(priorityLabel(taskAttribute(task, 'Priority'))))
   )
 }

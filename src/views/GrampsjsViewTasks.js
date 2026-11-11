@@ -8,7 +8,7 @@ import '../components/GrampsjsIcon.js'
 import {GrampsjsStaleDataMixin} from '../mixins/GrampsjsStaleDataMixin.js'
 
 import {fireEvent, toWritableObject} from '../util.js'
-import {sortTasks} from '../taskConstants.js'
+import {rulesEqual} from '../filterDefinitions.js'
 
 export class GrampsjsViewTasks extends GrampsjsStaleDataMixin(GrampsjsView) {
   static get styles() {
@@ -94,7 +94,7 @@ export class GrampsjsViewTasks extends GrampsjsStaleDataMixin(GrampsjsView) {
     this.loading = false
     if ('data' in data) {
       this.error = false
-      this._data = sortTasks(data.data)
+      this._data = data.data
     }
     if ('error' in data) {
       this.error = true
@@ -128,10 +128,14 @@ export class GrampsjsViewTasks extends GrampsjsStaleDataMixin(GrampsjsView) {
     }
   }
 
+  // the list filters the status and priority itself, so only a change of
+  // the other filters needs a new request
   _handleFiltersChanged(e) {
-    this._filters = e.detail.filters
-    e.preventDefault()
     e.stopPropagation()
+    if (rulesEqual(e.detail.filters, this._filters)) {
+      return
+    }
+    this._filters = e.detail.filters
     this._fetchData()
   }
 

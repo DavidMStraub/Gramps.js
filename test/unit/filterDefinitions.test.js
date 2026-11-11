@@ -144,6 +144,14 @@ describe('labels', () => {
     const section = propertiesFilter(_, {IsFemale: 'Females'})
     expect(pillLabel(_, section, {name: 'IsFemale'})).toBe('Females')
   })
+
+  it('puts the pill label before a checkbox label', () => {
+    const section = {
+      ...propertiesFilter(_, {IsFemale: 'Females'}),
+      pillLabel: 'Sex',
+    }
+    expect(pillLabel(_, section, {name: 'IsFemale'})).toBe('Sex: Females')
+  })
 })
 
 describe('pills', () => {

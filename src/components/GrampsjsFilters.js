@@ -188,12 +188,26 @@ export class GrampsjsFilters extends GrampsjsAppStateMixin(LitElement) {
       : this.definitions
   }
 
-  // the active rules
+  // the sections whose rules go to the server
+  get _serverSections() {
+    return this._sections.filter(section => !section.local)
+  }
+
+  _isLocal(pill) {
+    return findSection(this.definitions, pill.sectionId)?.local === true
+  }
+
+  // the active rules for the server
   get filters() {
     if (this._tree !== null) {
       return treeToFilters(this._tree)
     }
-    return this._pills.map(pill => pill.rule)
+    return this._pills.filter(pill => !this._isLocal(pill)).map(p => p.rule)
+  }
+
+  // the active rules of the local sections
+  get localFilters() {
+    return this._pills.filter(pill => this._isLocal(pill)).map(p => p.rule)
   }
 
   render() {
@@ -253,7 +267,10 @@ export class GrampsjsFilters extends GrampsjsAppStateMixin(LitElement) {
                     this._renderGoql()
                   )
                 : nothing}`
-            : this._renderAdvancedNotice()}
+            : html`${this._renderAdvancedNotice()}
+              ${this.definitions
+                .filter(section => section.local)
+                .map(section => this._renderSection(section))}`}
         </div>
         ${this.namespace && this._tree === null
           ? html`<md-text-button @click="${this._openBuilder}">
@@ -441,16 +458,19 @@ export class GrampsjsFilters extends GrampsjsAppStateMixin(LitElement) {
   }
 
   _openBuilder() {
+    const serverPills = this._pills.filter(pill => !this._isLocal(pill))
     this.renderRoot
       .querySelector('grampsjs-filter-builder')
-      ?.open(this._tree ?? pillsToTree(this._pills))
+      ?.open(this._tree ?? pillsToTree(serverPills))
   }
 
-  // Shows the builder's filter in the facets when they can show it
+  // Shows the builder's filter in the facets when they can show it. The
+  // builder only edits the server rules, so the local pills stay.
   _handleBuilderApply(e) {
     const {tree} = e.detail
-    const pills = treeToPills(tree, this._sections)
-    this._pills = pills ?? []
+    const pills = treeToPills(tree, this._serverSections)
+    const localPills = this._pills.filter(pill => this._isLocal(pill))
+    this._pills = [...(pills ?? []), ...localPills]
     this._tree = pills === null ? tree : null
     this._fireFiltersChanged()
   }
@@ -537,7 +557,10 @@ export class GrampsjsFilters extends GrampsjsAppStateMixin(LitElement) {
   }
 
   _fireFiltersChanged() {
-    fireEvent(this, 'filters:changed', {filters: this.filters})
+    fireEvent(this, 'filters:changed', {
+      filters: this.filters,
+      localFilters: this.localFilters,
+    })
   }
 }
 
