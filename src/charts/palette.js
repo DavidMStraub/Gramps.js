@@ -9,7 +9,6 @@ export const chartPalette = {
   // Opaque, so that links that run along each other look like one
   link: 'var(--grampsjs-chart-link)',
   familyMarker: 'var(--grampsjs-chart-link)',
-  familyMarkerFill: 'var(--grampsjs-chart-family-marker-fill)',
   triangle: 'var(--grampsjs-body-font-color-35)',
   triangleHover: 'var(--grampsjs-body-font-color-10)',
   shadow: 'var(--grampsjs-body-font-color-30)',
@@ -32,7 +31,6 @@ export const exportPalette = {
   text: '#1a1a1a',
   link: '#999999',
   familyMarker: '#999999',
-  familyMarkerFill: '#dcdcdc',
   triangle: '#a6a6a6',
   triangleHover: '#e6e6e6',
   shadow: '#b3b3b3',

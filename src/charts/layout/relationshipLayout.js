@@ -22,7 +22,7 @@ export const relationshipLayoutDefaults = {
 
 // Space left and right of each card, and between adjacent cards, in pixels
 const cardPadding = 5
-const gapWidth = 14
+const gapWidth = 30
 
 // Vertical distance in pixels from the bottom of a row of cards to the
 // bracket of a family whose partners are not adjacent, and between the
@@ -31,7 +31,7 @@ const bracketDepth = 16
 
 // Radius of a family's marker, from `familyMarker.js`, and room for the
 // width of lines
-const markerRadius = 6
+const markerRadius = 12
 const lineMargin = 2
 
 // Largest horizontal distance in pixels between the links that reach the
@@ -462,7 +462,7 @@ export function relationshipDot(model, options = relationshipLayoutDefaults) {
 // output of Graphviz, with y pointing down and the root person at the origin
 function readLayout(output, model, graph, rootHandle, options) {
   const {boxHeight} = options
-  const [markerX, markerY] = familyMarkerPosition(boxHeight)
+  const [markerX, markerY] = familyMarkerPosition
   const centres = new Map(
     (output.objects ?? [])
       .filter(object => object.pos)

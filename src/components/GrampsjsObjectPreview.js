@@ -143,6 +143,7 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
     this._showTimer = null
     this._hideTimer = null
     this._mouseInPopup = false
+    this._pinned = false
     this._boundShow = this._handleShow.bind(this)
     this._boundHide = this._handleHide.bind(this)
     this._boundDbChanged = () => {
@@ -182,6 +183,7 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
     // Going to another page hides the preview
     const previous = changed.get('appState')
     if (previous && previous.path !== this.appState.path) {
+      this._pinned = false
       this._visible = false
     }
   }
@@ -195,9 +197,22 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
   // cursor across many chart nodes in quick succession) resolves to a
   // single preview once the cursor settles on one target for SHOW_DELAY ms
   // (CHART_SHOW_DELAY ms in charts).
+  //
+  // A `pinned` preview, opened by a click, shows at once and stays open when
+  // the pointer leaves its anchor or the popup, and other previews do not
+  // replace it. A press outside the popup, a wheel event or Escape closes it.
   _handleShow(e) {
     const detail = e.detail
     clearTimeout(this._showTimer)
+    if (detail.pinned) {
+      clearTimeout(this._hideTimer)
+      this._pinned = true
+      this._showPreview(detail)
+      return
+    }
+    if (this._pinned) {
+      return
+    }
     // Returning to the anchor of the open popup keeps it open. When moving to
     // a different object, the open popup still closes after HIDE_DELAY, so it
     // does not linger over the chart while the new preview is pending.
@@ -238,7 +253,7 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
 
   _handleHide() {
     clearTimeout(this._showTimer)
-    if (this._mouseInPopup) return
+    if (this._mouseInPopup || this._pinned) return
     this._hideTimer = setTimeout(() => {
       this._visible = false
     }, HIDE_DELAY)
@@ -251,6 +266,7 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
     clearTimeout(this._showTimer)
     clearTimeout(this._hideTimer)
     this._mouseInPopup = false
+    this._pinned = false
     this._visible = false
   }
 
@@ -358,6 +374,7 @@ export class GrampsjsObjectPreview extends GrampsjsAppStateMixin(LitElement) {
 
   _handlePopupMouseLeave() {
     this._mouseInPopup = false
+    if (this._pinned) return
     this._hideTimer = setTimeout(() => {
       this._visible = false
     }, HIDE_DELAY)
