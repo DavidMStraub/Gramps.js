@@ -5,6 +5,7 @@ import {
   apiRegisterUser,
   apiResetPassword,
   apiGetOIDCConfig,
+  apiOIDCLogin,
   apiPutPostDelete,
   Auth,
   createFirstTree,
@@ -323,6 +324,51 @@ describe('apiGetOIDCConfig error handling', () => {
 
     const result = await apiGetOIDCConfig()
     expect(result.error).toBeDefined()
+  })
+})
+
+describe('apiOIDCLogin', () => {
+  let target
+
+  beforeEach(() => {
+    target = null
+    vi.stubGlobal('location', {
+      get href() {
+        return 'https://gramps.example.com/login'
+      },
+      set href(url) {
+        target = new URL(url, 'https://gramps.example.com')
+      },
+    })
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('sends the tree a new account is created in (#1661)', async () => {
+    await apiOIDCLogin('custom', 'tree-1')
+    expect(target.pathname).toBe('/api/oidc/login/')
+    expect(target.searchParams.get('provider')).toBe('custom')
+    expect(target.searchParams.get('tree')).toBe('tree-1')
+  })
+
+  it('leaves the tree out when there is none', async () => {
+    await apiOIDCLogin('custom')
+    expect(target.searchParams.get('provider')).toBe('custom')
+    expect(target.searchParams.has('tree')).toBe(false)
+  })
+
+  it('encodes the provider and tree', async () => {
+    await apiOIDCLogin('a&b', 'x y')
+    expect(target.searchParams.get('provider')).toBe('a&b')
+    expect(target.searchParams.get('tree')).toBe('x y')
+  })
+
+  it('refuses a missing provider without navigating', async () => {
+    const result = await apiOIDCLogin('', 'tree-1')
+    expect(result.error).toBeDefined()
+    expect(target).toBeNull()
   })
 })
 

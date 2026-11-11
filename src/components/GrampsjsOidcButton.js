@@ -105,3 +105,22 @@ class GrampsjsOidcButton extends LitElement {
 }
 
 window.customElements.define('grampsjs-oidc-button', GrampsjsOidcButton)
+
+// One button per provider of an OIDC config. `translate` is the host's `_`.
+export function renderOidcButtons(
+  providers,
+  {translate, loadingProvider, onClick}
+) {
+  return (providers ?? []).map(
+    provider => html`
+      <grampsjs-oidc-button
+        .provider="${provider.id}"
+        .providerName="${provider.name}"
+        .onClick="${() => onClick(provider.id)}"
+        .buttonText="${translate('Continue with %s', provider.name)}"
+        .signingInText="${translate('Signing in...')}"
+        .loading="${loadingProvider === provider.id}"
+      ></grampsjs-oidc-button>
+    `
+  )
+}

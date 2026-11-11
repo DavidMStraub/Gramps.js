@@ -8,7 +8,7 @@ import '@material/web/button/filled-tonal-button.js'
 import {mdiCheckCircle} from '@mdi/js'
 
 import './GrampsjsIcon.js'
-import './GrampsjsOidcButton.js'
+import {renderOidcButtons} from './GrampsjsOidcButton.js'
 import {sharedStyles} from '../SharedStyles.js'
 import {
   apiGetTokens,
@@ -304,7 +304,10 @@ class GrampsjsLogin extends GrampsjsAppStateMixin(LitElement) {
                     ? ''
                     : html`
                         <md-filled-tonal-button
-                          @click="${() => this._handleNav('register')}"
+                          @click="${() =>
+                            this._handleNav(
+                              this.tree ? `register/${this.tree}` : 'register'
+                            )}"
                         >
                           ${this._('Register new account')}
                         </md-filled-tonal-button>
@@ -335,21 +338,11 @@ class GrampsjsLogin extends GrampsjsAppStateMixin(LitElement) {
             ? html`<hr />`
             : ''}
           ${this.oidcConfig?.enabled && this.oidcConfig?.providers
-            ? this.oidcConfig.providers.map(
-                provider => html`
-                  <grampsjs-oidc-button
-                    .provider="${provider.id}"
-                    .providerName="${provider.name}"
-                    .onClick="${() => this._submitOIDCLogin(provider.id)}"
-                    .buttonText="${this._getOIDCButtonText(
-                      provider.id,
-                      provider.name
-                    )}"
-                    .signingInText="${this._('Signing in...')}"
-                    .loading="${this._oidcProvider === provider.id}"
-                  ></grampsjs-oidc-button>
-                `
-              )
+            ? renderOidcButtons(this.oidcConfig.providers, {
+                translate: (...args) => this._(...args),
+                loadingProvider: this._oidcProvider,
+                onClick: id => this._submitOIDCLogin(id),
+              })
             : ''}
         </form>
       </div>
@@ -358,10 +351,6 @@ class GrampsjsLogin extends GrampsjsAppStateMixin(LitElement) {
 
   _handleNav(path) {
     fireEvent(this, 'nav', {path})
-  }
-
-  _getOIDCButtonText(providerId, providerName) {
-    return `${this._('Continue with %s', providerName)}`
   }
 
   _credChanged(e) {
@@ -458,7 +447,7 @@ class GrampsjsLogin extends GrampsjsAppStateMixin(LitElement) {
       return
     }
     this._oidcProvider = providerId
-    const res = await apiOIDCLogin(providerId)
+    const res = await apiOIDCLogin(providerId, this.tree)
     if ('error' in res) {
       this._oidcProvider = ''
       this._showError(res.error)
