@@ -113,6 +113,7 @@ export class GrampsjsViewBlogPost extends GrampsjsView {
         this._errorMessage = data.error
       }
     })
+    this._dataNotes = []
     const uriNotes = this._getNotesUrl()
     if (uriNotes) {
       await this.appState.apiGet(uriNotes).then(data => {
