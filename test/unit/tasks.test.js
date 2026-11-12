@@ -1,7 +1,13 @@
 import {describe, it, expect, afterEach, vi} from 'vitest'
 import '../../src/components/GrampsjsTasks.js'
 import {GrampsjsViewTasks} from '../../src/views/GrampsjsViewTasks.js'
-import {priorityLabel, sortTasks} from '../../src/taskConstants.js'
+import {fireEvent} from '../../src/util.js'
+import {
+  filterTasks,
+  priorityLabel,
+  sortTasks,
+  taskStatusFilter,
+} from '../../src/taskConstants.js'
 
 // tippy.js cannot find the tooltip targets in happy-dom
 vi.mock('tippy.js', () => ({default: () => ({setContent() {}})}))
@@ -32,7 +38,7 @@ if (!HTMLElement.prototype.attachInternals) {
   }
 }
 
-function task(handle, {status, priority} = {}) {
+function task(handle, {status, priority, title, change} = {}) {
   const attributes = []
   if (status !== undefined) attributes.push({type: 'Status', value: status})
   if (priority !== undefined) {
@@ -41,7 +47,8 @@ function task(handle, {status, priority} = {}) {
   return {
     handle,
     gramps_id: `S${handle}`,
-    title: `Task ${handle}`,
+    title: title ?? `Task ${handle}`,
+    change,
     attribute_list: attributes,
     extended: {tags: []},
   }
@@ -91,6 +98,38 @@ describe('sortTasks', () => {
     ).toEqual(['high', 'medium', 'low', 'none', 'odd'])
   })
 
+  it('sorts by priority, then by status', () => {
+    expect(
+      sortTasks(
+        [
+          task('none', {status: 'Open'}),
+          task('lowOpen', {status: 'Open', priority: '9'}),
+          task('highDone', {status: 'Done', priority: '1'}),
+          task('highOpen', {status: 'Open', priority: '1'}),
+        ],
+        'priority'
+      ).map(t => t.handle)
+    ).toEqual(['highOpen', 'highDone', 'lowOpen', 'none'])
+  })
+
+  it('sorts by title and by last change, newest first', () => {
+    const tasks = [
+      task('b', {title: 'beta', change: 1}),
+      task('none', {title: 'Gamma'}),
+      task('a', {title: 'Alpha', change: 3}),
+    ]
+    expect(sortTasks(tasks, 'title', 'en').map(t => t.handle)).toEqual([
+      'a',
+      'b',
+      'none',
+    ])
+    expect(sortTasks(tasks, 'change').map(t => t.handle)).toEqual([
+      'a',
+      'b',
+      'none',
+    ])
+  })
+
   it('keeps the order of tasks that tie', () => {
     expect(
       handles([
@@ -98,6 +137,45 @@ describe('sortTasks', () => {
         task('a', {status: 'Open', priority: '5'}),
       ])
     ).toEqual(['b', 'a'])
+  })
+})
+
+describe('filterTasks', () => {
+  const tasks = [
+    task('open', {status: 'Open', priority: '1'}),
+    task('blocked', {status: 'Blocked', priority: '9'}),
+    task('done', {status: 'Done', priority: '2'}),
+    task('none'),
+  ]
+  const status = value => ({name: 'Status', values: [value]})
+  const priority = value => ({name: 'Priority', values: [value]})
+  const handles = rules => filterTasks(tasks, rules).map(t => t.handle)
+
+  it('keeps every task without rules', () => {
+    expect(handles([])).toEqual(['open', 'blocked', 'done', 'none'])
+  })
+
+  it('keeps tasks with any of the statuses', () => {
+    expect(handles([status('Open'), status('Blocked')])).toEqual([
+      'open',
+      'blocked',
+    ])
+  })
+
+  it('keeps tasks with any of the priorities and any of the statuses', () => {
+    expect(handles([priority('High')])).toEqual(['open', 'done'])
+    expect(handles([priority('High'), status('Done')])).toEqual(['done'])
+  })
+
+  it('has rules the filter panel can show', () => {
+    const section = taskStatusFilter(s => s)
+    expect(section.local).toBe(true)
+    expect(section.entries.map(e => e.rule)).toEqual([
+      status('Open'),
+      status('In Progress'),
+      status('Blocked'),
+      status('Done'),
+    ])
   })
 })
 
@@ -222,6 +300,77 @@ describe('GrampsjsTasks', () => {
     expect(el._selectedHandles).toEqual([])
   })
 
+  it('lists the tasks with the filtered status and selects only them', async () => {
+    const el = await mount({data})
+    el._localFilters = [{name: 'Status', values: ['Done']}]
+    await el.updateComplete
+    expect(rows(el).map(row => row.querySelector('a').textContent)).toEqual([
+      'Task c',
+    ])
+    el._handleSelectAll()
+    expect(el._selectedHandles).toEqual(['c'])
+  })
+
+  it('deselects the tasks a filter hides', async () => {
+    const el = await mount({data})
+    await check(el, 0)
+    await check(el, 2)
+    el._localFilters = [{name: 'Status', values: ['Done']}]
+    await el.updateComplete
+    expect(el._selectedHandles).toEqual(['c'])
+  })
+
+  it('marks the sort control with an icon', async () => {
+    const el = await mount({data})
+    expect(
+      $(el, '.sort-control grampsjs-icon[slot="leading-icon"]')
+    ).not.toBeNull()
+  })
+
+  it('says so when the filters leave no tasks', async () => {
+    const el = await mount({data})
+    el._localFilters = [{name: 'Priority', values: ['High']}]
+    await el.updateComplete
+    expect($(el, '.empty').textContent).toBe('None')
+  })
+
+  it('sorts with the selected order', async () => {
+    const el = await mount({
+      data: [task('a', {title: 'Zulu'}), task('b', {title: 'Alpha'})],
+    })
+    el._sortKey = 'title'
+    await el.updateComplete
+    expect(rows(el).map(row => row.querySelector('a').textContent)).toEqual([
+      'Alpha',
+      'Zulu',
+    ])
+  })
+
+  it('sorts by title in a language with a region', async () => {
+    const appState = appStateFor()
+    appState.i18n.lang = 'pt_BR'
+    const el = await mount({
+      appState,
+      data: [task('a', {title: 'Zulu'}), task('b', {title: 'Alpha'})],
+    })
+    el._sortKey = 'title'
+    await el.updateComplete
+    expect(rows(el).map(row => row.querySelector('a').textContent)).toEqual([
+      'Alpha',
+      'Zulu',
+    ])
+  })
+
+  it('takes the status and priority filters from the filter bar', async () => {
+    const el = await mount({data})
+    const rules = [{name: 'Priority', values: ['Low']}]
+    fireEvent($(el, 'grampsjs-filters'), 'filters:changed', {
+      filters: [],
+      localFilters: rules,
+    })
+    expect(el._localFilters).toEqual(rules)
+  })
+
   it('updates the selected tasks after the list reloads in a new order', async () => {
     const el = await mount({data})
     await check(el, 0)
@@ -283,6 +432,29 @@ describe('GrampsjsTasks', () => {
   it('shows nothing while the first list loads', async () => {
     const el = await mount({data: [], loading: true})
     expect($(el, '.empty')).toBeNull()
+  })
+})
+
+describe('GrampsjsViewTasks filters', () => {
+  function makeView() {
+    const view = {
+      _filters: [],
+      _fetchData: vi.fn(),
+      _handleFiltersChanged: GrampsjsViewTasks.prototype._handleFiltersChanged,
+    }
+    return view
+  }
+  const changed = filters => ({detail: {filters}, stopPropagation() {}})
+
+  it('loads the tasks again only when the server filters change', () => {
+    const view = makeView()
+    view._handleFiltersChanged(changed([]))
+    expect(view._fetchData).not.toHaveBeenCalled()
+    const rules = [{name: 'MatchesTitleSubstringOf', values: ['x']}]
+    view._handleFiltersChanged(changed(rules))
+    view._handleFiltersChanged(changed([...rules]))
+    expect(view._fetchData).toHaveBeenCalledTimes(1)
+    expect(view._filters).toEqual(rules)
   })
 })
 
