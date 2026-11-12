@@ -1,9 +1,9 @@
-import {describe, it, expect, afterEach} from 'vitest'
+import {describe, it, expect, afterEach, vi} from 'vitest'
 import {
   appStateUpdatePermissions,
+  getInitialAppState,
   isTaskActive,
   isTaskInTree,
-  shouldSignalTreeMissing,
 } from '../../src/appState.js'
 
 // Minimal fake JWT with known permissions claims.
@@ -125,32 +125,6 @@ describe('appStateUpdatePermissions', () => {
   })
 })
 
-describe('shouldSignalTreeMissing', () => {
-  it('signals when a 403 occurs and the token has no tree', () => {
-    const result = {error: 'No tree ID in JWT', errorDetail: {status: 403}}
-    expect(shouldSignalTreeMissing(result, undefined)).to.be.true
-  })
-
-  it('does not signal on a 403 when the token already has a tree', () => {
-    const result = {error: 'Not authorized', errorDetail: {status: 403}}
-    expect(shouldSignalTreeMissing(result, 'tree-123')).to.be.false
-  })
-
-  it('does not signal for non-403 errors even without a tree', () => {
-    const result = {error: 'Network error', errorDetail: {status: undefined}}
-    expect(shouldSignalTreeMissing(result, undefined)).to.be.false
-  })
-
-  it('does not signal for a successful result', () => {
-    expect(shouldSignalTreeMissing({data: {}}, undefined)).to.be.false
-  })
-
-  it('tolerates a null/undefined result', () => {
-    expect(shouldSignalTreeMissing(undefined, undefined)).to.be.false
-    expect(shouldSignalTreeMissing(null, undefined)).to.be.false
-  })
-})
-
 describe('isTaskInTree', () => {
   it('keeps tasks of the current tree and drops those of other trees', () => {
     expect(isTaskInTree({tree: 'tree-a'}, 'tree-a')).to.be.true
@@ -177,5 +151,40 @@ describe('isTaskActive', () => {
   it('falls back to the Celery state without a status field', () => {
     expect(isTaskActive({state: 'STARTED'})).to.be.true
     expect(isTaskActive({state: 'SUCCESS'})).to.be.false
+  })
+})
+
+describe('appState.apiGet progress counter', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  async function countCounterEvents(options) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        status: 200,
+        ok: true,
+        json: () => Promise.resolve({}),
+        headers: {get: () => null},
+      })
+    )
+    const events = []
+    const listener = e => events.push(e.detail.activeGet)
+    window.addEventListener('requests:changed', listener)
+    try {
+      await getInitialAppState().apiGet('/api/metadata/', options)
+    } finally {
+      window.removeEventListener('requests:changed', listener)
+    }
+    return events
+  }
+
+  it('counts a normal request', async () => {
+    expect(await countCounterEvents()).to.deep.equal([1, 0])
+  })
+
+  it('skips the counter for a background request', async () => {
+    expect(await countCounterEvents({background: true})).to.deep.equal([])
   })
 })

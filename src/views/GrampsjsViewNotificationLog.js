@@ -226,9 +226,11 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
               ${this._notifications.map(
                 n => html`
                   <md-list-item
-                    type="${this._hasDetail(n) ? 'button' : 'text'}"
-                    ?noninteractive="${!this._hasDetail(n)}"
-                    @click="${() => this._hasDetail(n) && this._openDetail(n)}"
+                    type="${this._itemType(n)}"
+                    href="${this._href(n)}"
+                    ?noninteractive="${this._itemType(n) === 'text'}"
+                    @click="${() =>
+                      this._itemType(n) === 'button' && this._openDetail(n)}"
                   >
                     <grampsjs-icon
                       slot="start"
@@ -237,9 +239,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
                       height="20"
                       width="20"
                     ></grampsjs-icon>
-                    <div slot="headline">
-                      ${n.source === 'task' ? this._(n.message) : n.message}
-                    </div>
+                    <div slot="headline">${this._message(n)}</div>
                     <div slot="supporting-text">
                       ${this._sourceLabel(n)} &middot;
                       <grampsjs-timedelta
@@ -248,7 +248,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
                       ></grampsjs-timedelta>
                       ${n.userName ? html` &middot; ${n.userName}` : ''}
                     </div>
-                    ${this._hasDetail(n)
+                    ${this._itemType(n) !== 'text'
                       ? html`<grampsjs-icon
                           slot="end"
                           path="${mdiChevronRight}"
@@ -267,9 +267,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
         ? html`
             <md-dialog open @cancel="${e => e.preventDefault()}">
               <div slot="headline">
-                ${this._selectedNotification.source === 'task'
-                  ? this._(this._selectedNotification.message)
-                  : this._selectedNotification.message}
+                ${this._message(this._selectedNotification)}
               </div>
               <div slot="content">
                 ${this._failureMessage(this._selectedNotification)
@@ -388,6 +386,32 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
     return n.detail && Object.keys(n.detail).length > 0
   }
 
+  // A change by another user links to its revision, several changes link to
+  // the list of revisions.
+  // eslint-disable-next-line class-methods-use-this
+  _href(n) {
+    if (n.source !== 'history') return ''
+    const id = n.detail?.transactionId
+    return id != null ? `/revision/${id}` : '/revisions'
+  }
+
+  // 'link' for an entry with a page, 'button' for one with details to show,
+  // 'text' otherwise.
+  _itemType(n) {
+    if (this._href(n)) return 'link'
+    return this._hasDetail(n) ? 'button' : 'text'
+  }
+
+  // Task labels and transaction descriptions are translatable strings.
+  _message(n) {
+    if (n.source === 'history' && n.detail?.count > 1) {
+      return this._('%s changes', n.detail.count)
+    }
+    return ['task', 'history'].includes(n.source)
+      ? this._(n.message)
+      : n.message
+  }
+
   _openDetail(n) {
     this._selectedNotification = n
   }
@@ -405,6 +429,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
       task: this._('Task'),
       save: this._('_Save'),
       browser: this._('Browser'),
+      history: this._('Revisions'),
     }
     return labels[n.source] ?? n.source
   }

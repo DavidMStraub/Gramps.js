@@ -8,7 +8,7 @@ import {mdiAlertOutline, mdiDownload} from '@mdi/js'
 import {GrampsjsView} from './GrampsjsView.js'
 import '../components/GrampsjsIcon.js'
 import '../components/GrampsjsImportExportReport.js'
-import {downloadExportFile, getPermissions} from '../api.js'
+import {downloadExportFile} from '../api.js'
 import {formatRateLimit} from '../util.js'
 import {awaitTaskResponse} from '../taskResponse.js'
 
@@ -35,7 +35,6 @@ export class GrampsjsViewExport extends GrampsjsView {
       _downloadUrl: {type: String},
       _mediaDownloadUrl: {type: String},
       _messages: {type: Array},
-      _viewPrivate: {type: Boolean},
     }
   }
 
@@ -46,7 +45,6 @@ export class GrampsjsViewExport extends GrampsjsView {
     this._downloadUrl = ''
     this._mediaDownloadUrl = ''
     this._messages = []
-    this._viewPrivate = true
     // Tokens of the latest export and media export. A new run, or selecting
     // another exporter, replaces the token; a replaced run discards its
     // result.
@@ -160,7 +158,7 @@ export class GrampsjsViewExport extends GrampsjsView {
   }
 
   _renderWarning() {
-    if (this._viewPrivate) {
+    if (this.appState.permissions.canViewPrivate) {
       return ''
     }
     return html`
@@ -283,12 +281,6 @@ export class GrampsjsViewExport extends GrampsjsView {
       this.error = true
       this._errorMessage = data.error
     }
-  }
-
-  firstUpdated() {
-    super.firstUpdated()
-    const permissions = getPermissions()
-    this._viewPrivate = permissions.includes('ViewPrivate')
   }
 
   _onLangChanged() {

@@ -317,6 +317,7 @@ describe('export view: download buttons', () => {
         apiGet: vi.fn().mockResolvedValue({data: []}),
         refreshTokenIfNeeded: vi.fn().mockResolvedValue(undefined),
         i18n: {strings: {}},
+        permissions: {canViewPrivate: true},
       },
     })
     el.active = true

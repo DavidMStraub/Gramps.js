@@ -31,6 +31,7 @@ import {
 } from './util.js'
 
 import {appStateUpdatePermissions, getInitialAppState} from './appState.js'
+import {HistoryPoller, historyNotifications} from './historyPoller.js'
 import {
   LOADING_STATE_INITIAL,
   LOADING_STATE_UNAUTHORIZED,
@@ -106,6 +107,10 @@ export class GrampsJs extends LitElement {
     this._homePersonMissing = false
     this._homePersonFetchingId = null
     this._homePersonLoadedId = null
+    this._historyPoller = new HistoryPoller(
+      (endpoint, options) => this.appState.apiGet(endpoint, options),
+      () => this.appState.auth.claims.sub
+    )
     this._showShortcuts = false
     this._shortcutPressed = ''
     this._firstRunToken = ''
@@ -653,11 +658,11 @@ export class GrampsJs extends LitElement {
       this._handleRequestsChanged.bind(this)
     )
     window.addEventListener('db:changed', () => this._loadDbInfo(false))
+    window.addEventListener('history:changed', e =>
+      this._handleHistoryChanged(e)
+    )
     window.addEventListener('task:complete', e => this._handleTaskDone(e))
     window.addEventListener('task:error', e => this._handleTaskDone(e))
-    window.addEventListener('tree:missing', () => {
-      this.loadingState = LOADING_STATE_NO_TREE
-    })
     this.addEventListener('drawer:toggle', this._toggleDrawer)
     window.addEventListener('keydown', event => this._handleKey(event))
     window.addEventListener('shortcuts:show', event =>
@@ -761,6 +766,9 @@ export class GrampsJs extends LitElement {
           if (setReady) {
             this.loadingState = LOADING_STATE_UNAUTHORIZED_NOCONNECTION
           }
+        } else if (data.errorDetail?.status === 403 && !getTreeId()) {
+          this.setPermissions()
+          this.loadingState = LOADING_STATE_NO_TREE
         } else {
           this._fetchOnboardingToken()
         }
@@ -900,6 +908,16 @@ export class GrampsJs extends LitElement {
     this.setPermissions()
     this._loadTreeConfig()
     this.appState.loadActiveTasks()
+    // The history endpoints require ViewPrivate.
+    if (this.appState.permissions.canViewPrivate) {
+      this._historyPoller.start()
+    }
+  }
+
+  _handleHistoryChanged(e) {
+    historyNotifications(e.detail.transactions).forEach(notification => {
+      this.appState.addNotification(notification)
+    })
   }
 
   _loadTreeConfig() {
@@ -1136,6 +1154,7 @@ export class GrampsJs extends LitElement {
   }
 
   _handleLogout(e) {
+    this._historyPoller.stop()
     this._metadataConfirmed = false
     // On an OIDC logout the browser is about to leave for the identity
     // provider; showing the login view here would re-enter the OIDC flow

@@ -110,3 +110,42 @@ describe('notification log: export downloads', () => {
     expect(anchor.click).toHaveBeenCalled()
   })
 })
+
+describe('notification log: changes by other users', () => {
+  const change = {
+    source: 'history',
+    type: 'info',
+    message: 'Edit Person',
+    detail: {transactionId: 42},
+  }
+
+  it('links to the revision', () => {
+    const log = makeLog()
+    expect(log._href(change)).toBe('/revision/42')
+    expect(log._itemType(change)).toBe('link')
+    expect(log._sourceLabel(change)).toBe('Revisions')
+  })
+
+  it('translates the description', () => {
+    const log = makeLog()
+    log.appState = {i18n: {strings: {'Edit Person': 'Person bearbeiten'}}}
+    expect(log._message(change)).toBe('Person bearbeiten')
+    expect(log._message({...change, source: 'api'})).toBe('Edit Person')
+  })
+
+  it('counts several changes and links to the revisions', () => {
+    const log = makeLog()
+    const several = {...change, message: '', detail: {count: 3}}
+    expect(log._message(several)).toBe('3 changes')
+    expect(log._href(several)).toBe('/revisions')
+    expect(log._itemType(several)).toBe('link')
+  })
+
+  it('keeps the detail dialog for other entries', () => {
+    const log = makeLog()
+    const error = {source: 'api', type: 'error', detail: {status: 500}}
+    expect(log._href(error)).toBe('')
+    expect(log._itemType(error)).toBe('button')
+    expect(log._itemType({...error, detail: {}})).toBe('text')
+  })
+})
