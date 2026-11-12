@@ -1091,11 +1091,16 @@ export class Auth {
   }
 }
 
-export async function apiGet(auth, endpoint) {
+// With `etag`, the request is conditional: an unchanged resource returns
+// `{notModified: true}` with the response headers and no data.
+export async function apiGet(auth, endpoint, {etag} = {}) {
   let status
   let resJson
   try {
     const headers = {}
+    if (etag) {
+      headers['If-None-Match'] = etag
+    }
     try {
       const accessToken = await auth.getValidAccessToken()
       headers.Authorization = `Bearer ${accessToken}`
@@ -1108,6 +1113,13 @@ export async function apiGet(auth, endpoint) {
       headers,
     })
     status = resp.status
+    if (etag && resp.status === 304) {
+      return {
+        notModified: true,
+        total_count: resp.headers.get('X-Total-Count'),
+        etag: resp.headers.get('ETag'),
+      }
+    }
     try {
       resJson = await resp.json()
     } catch (error) {

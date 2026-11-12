@@ -78,6 +78,65 @@ describe('apiGet authentication', () => {
   })
 })
 
+describe('apiGet conditional requests', () => {
+  const mockAuth = {
+    getValidAccessToken: vi.fn().mockResolvedValue('test-token'),
+  }
+
+  function stubResponse(status, headers = {}) {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        status,
+        ok: status === 200,
+        statusText: '',
+        json: () =>
+          status === 304
+            ? Promise.reject(new SyntaxError('empty body'))
+            : Promise.resolve([{id: 1}]),
+        headers: {get: name => headers[name] ?? null},
+      })
+    )
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('sends no If-None-Match without an etag', async () => {
+    stubResponse(200)
+    await apiGet(mockAuth, '/api/transactions/history/')
+    const [, options] = fetch.mock.calls[0]
+    expect(options.headers).not.to.have.property('If-None-Match')
+  })
+
+  it('sends If-None-Match and reports a 304 as not modified', async () => {
+    stubResponse(304, {ETag: '"abc"', 'X-Total-Count': '7'})
+    const result = await apiGet(mockAuth, '/api/transactions/history/', {
+      etag: '"abc"',
+    })
+    const [, options] = fetch.mock.calls[0]
+    expect(options.headers).to.have.property('If-None-Match', '"abc"')
+    expect(result).to.deep.equal({
+      notModified: true,
+      total_count: '7',
+      etag: '"abc"',
+    })
+  })
+
+  it('returns data and the new etag on a 200', async () => {
+    stubResponse(200, {ETag: '"def"', 'X-Total-Count': '1'})
+    const result = await apiGet(mockAuth, '/api/transactions/history/', {
+      etag: '"abc"',
+    })
+    expect(result).to.deep.equal({
+      data: [{id: 1}],
+      total_count: '1',
+      etag: '"def"',
+    })
+  })
+})
+
 describe('apiGetTokens error handling', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
