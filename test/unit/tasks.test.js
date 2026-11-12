@@ -346,6 +346,21 @@ describe('GrampsjsTasks', () => {
     ])
   })
 
+  it('sorts by title in a language with a region', async () => {
+    const appState = appStateFor()
+    appState.i18n.lang = 'pt_BR'
+    const el = await mount({
+      appState,
+      data: [task('a', {title: 'Zulu'}), task('b', {title: 'Alpha'})],
+    })
+    el._sortKey = 'title'
+    await el.updateComplete
+    expect(rows(el).map(row => row.querySelector('a').textContent)).toEqual([
+      'Alpha',
+      'Zulu',
+    ])
+  })
+
   it('takes the status and priority filters from the filter bar', async () => {
     const el = await mount({data})
     const rules = [{name: 'Priority', values: ['Low']}]

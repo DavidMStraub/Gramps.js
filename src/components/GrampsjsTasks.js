@@ -229,7 +229,8 @@ class GrampsjsTasks extends GrampsjsAppStateMixin(LitElement) {
       this._tasks = sortTasks(
         filterTasks(this.data, this._localFilters),
         this._sortKey,
-        this.appState?.i18n?.lang
+        // Intl needs `pt-BR` for the app's `pt_BR`
+        (this.appState?.i18n?.lang || 'en').replace('_', '-')
       )
       const handles = this._tasks.map(task => task.handle)
       const selected = this._selectedHandles.filter(handle =>
