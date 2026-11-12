@@ -192,10 +192,6 @@ export const sharedStyles = css`
     border-radius: 22px;
   }
 
-  .float-right {
-    float: right;
-  }
-
   grampsjs-icon.inline {
     vertical-align: middle;
     padding-right: 0.2em;
