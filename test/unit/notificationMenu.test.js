@@ -12,6 +12,7 @@ const change = {
   source: 'history',
   type: 'info',
   message: 'Edit Person',
+  timestamp: new Date(),
   detail: {transactionId: 42},
 }
 const exportDone = {
@@ -19,6 +20,7 @@ const exportDone = {
   source: 'task',
   type: 'success',
   message: 'Export',
+  timestamp: new Date(),
   detail: {url: '/api/media/archive/def.zip'},
 }
 const apiError = {
@@ -26,6 +28,7 @@ const apiError = {
   source: 'api',
   type: 'error',
   message: 'Boom',
+  timestamp: new Date(),
   detail: {status: 500},
 }
 
@@ -61,7 +64,7 @@ describe('notification menu', () => {
     expect(loadActiveTasks).toHaveBeenCalled()
   })
 
-  it('counts running tasks in the badge when it appears', () => {
+  it('counts running tasks in the badge when it appears', async () => {
     const menu = makeMenu({
       getNotifications: () => [
         {...change, read: false},
@@ -74,6 +77,7 @@ describe('notification menu', () => {
     })
 
     document.body.appendChild(menu)
+    await menu.updateComplete
 
     expect(menu._unreadCount).toBe(2)
     menu.remove()
