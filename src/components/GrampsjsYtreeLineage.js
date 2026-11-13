@@ -16,17 +16,28 @@ export class GrampsjsYtreeLineage extends GrampsjsAppStateMixin(LitElement) {
     return [
       sharedStyles,
       css`
+        /* centred on the boxes, which start 20 units into the 370 unit wide
+           chart and are 250 wide; a share of the width, so it stays centred
+           when the chart shrinks on narrow screens */
         .expand-button {
           position: absolute;
           top: -5px;
-          left: 145px;
+          left: calc(145 / 370 * 100%);
           transform: translateX(-50%);
           z-index: 1;
         }
 
         .container {
           position: relative;
+          width: max-content;
+          max-width: 100%;
           padding-top: 40px;
+        }
+
+        svg {
+          display: block;
+          max-width: 100%;
+          height: auto;
         }
 
         md-filled-tonal-icon-button {
