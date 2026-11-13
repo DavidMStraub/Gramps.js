@@ -6,35 +6,24 @@ import '@material/web/button/outlined-button.js'
 import '@material/web/button/text-button.js'
 import '@material/web/dialog/dialog.js'
 import '@material/web/iconbutton/icon-button.js'
-import {
-  mdiAlertCircleOutline,
-  mdiCheckCircleOutline,
-  mdiInformationOutline,
-  mdiAlertOutline,
-  mdiDeleteSweep,
-  mdiChevronRight,
-  mdiContentCopy,
-} from '@mdi/js'
+import {mdiDeleteSweep, mdiChevronRight, mdiContentCopy} from '@mdi/js'
 
 import {GrampsjsView} from './GrampsjsView.js'
-import {downloadExportFile, isExportDownloadUrl} from '../api.js'
+import {downloadExportFile} from '../api.js'
+import {
+  notificationDownloadFileName,
+  notificationDownloadUrl,
+  notificationFailureMessage,
+  notificationHasDetail,
+  notificationHref,
+  notificationMessage,
+  notificationSourceLabel,
+  renderNotificationContent,
+  runningTasks,
+} from '../notifications.js'
 import '../components/GrampsjsIcon.js'
 import '../components/GrampsjsTimedelta.js'
 import '../components/GrampsjsTaskProgressIndicator.js'
-
-const TYPE_ICON = {
-  error: mdiAlertCircleOutline,
-  warning: mdiAlertOutline,
-  info: mdiInformationOutline,
-  success: mdiCheckCircleOutline,
-}
-
-const TYPE_COLOR = {
-  error: 'var(--md-sys-color-error)',
-  warning: 'var(--md-sys-color-tertiary)',
-  info: 'var(--md-sys-color-primary)',
-  success: 'var(--grampsjs-alert-success-font-color)',
-}
 
 export class GrampsjsViewNotificationLog extends GrampsjsView {
   static get styles() {
@@ -142,8 +131,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
   }
 
   get _runningTasks() {
-    const terminal = new Set(['SUCCESS', 'FAILURE', 'REVOKED'])
-    return this._activeTasks.filter(t => !terminal.has(t.state))
+    return runningTasks(this._activeTasks)
   }
 
   _handleNotificationsChanged(e) {
@@ -215,7 +203,7 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
           `
         : ''}
       ${this._notifications.length === 0 && this._runningTasks.length === 0
-        ? html`<p class="empty-state">${this._('None')}.</p>`
+        ? html`<p class="empty-state">${this._('No notifications')}</p>`
         : this._notifications.length === 0
         ? ''
         : html`
@@ -232,22 +220,11 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
                     @click="${() =>
                       this._itemType(n) === 'button' && this._openDetail(n)}"
                   >
-                    <grampsjs-icon
-                      slot="start"
-                      path="${TYPE_ICON[n.type] ?? TYPE_ICON.info}"
-                      color="${TYPE_COLOR[n.type] ?? TYPE_COLOR.info}"
-                      height="20"
-                      width="20"
-                    ></grampsjs-icon>
-                    <div slot="headline">${this._message(n)}</div>
-                    <div slot="supporting-text">
-                      ${this._sourceLabel(n)} &middot;
-                      <grampsjs-timedelta
-                        timestamp="${n.timestamp.getTime() / 1000}"
-                        locale="${this.appState?.i18n?.lang || 'en'}"
-                      ></grampsjs-timedelta>
-                      ${n.userName ? html` &middot; ${n.userName}` : ''}
-                    </div>
+                    ${renderNotificationContent(
+                      n,
+                      (...a) => this._(...a),
+                      this.appState?.i18n?.lang
+                    )}
                     ${this._itemType(n) !== 'text'
                       ? html`<grampsjs-icon
                           slot="end"
@@ -331,27 +308,14 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
     `
   }
 
-  // The file URL of a finished export or media archive, else ''.
   // eslint-disable-next-line class-methods-use-this
   _downloadUrl(n) {
-    if (n?.source !== 'task' || n.type !== 'success') {
-      return ''
-    }
-    const url = n.detail?.url
-    return isExportDownloadUrl(url) ? url : ''
+    return notificationDownloadUrl(n)
   }
 
-  // Matches the file names the Export page uses.
   // eslint-disable-next-line class-methods-use-this
   _downloadFileName(n) {
-    const {url, file_type: fileType, file_name: fileName} = n.detail
-    if (url.startsWith('/api/media/archive/')) {
-      return 'grampsweb-media-export.zip'
-    }
-    if (typeof fileType === 'string' && fileType) {
-      return `grampsweb-export${fileType}`
-    }
-    return fileName || ''
+    return notificationDownloadFileName(n)
   }
 
   _download(n) {
@@ -382,75 +346,32 @@ export class GrampsjsViewNotificationLog extends GrampsjsView {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  _hasDetail(n) {
-    return n.detail && Object.keys(n.detail).length > 0
-  }
-
-  // A change by another user links to its revision, several changes link to
-  // the list of revisions.
-  // eslint-disable-next-line class-methods-use-this
   _href(n) {
-    if (n.source !== 'history') return ''
-    const id = n.detail?.transactionId
-    return id != null ? `/revision/${id}` : '/revisions'
+    return notificationHref(n)
   }
 
   // 'link' for an entry with a page, 'button' for one with details to show,
   // 'text' otherwise.
   _itemType(n) {
     if (this._href(n)) return 'link'
-    return this._hasDetail(n) ? 'button' : 'text'
+    return notificationHasDetail(n) ? 'button' : 'text'
   }
 
-  // Task labels and transaction descriptions are translatable strings.
   _message(n) {
-    if (n.source === 'history' && n.detail?.count > 1) {
-      return this._('%s changes', n.detail.count)
-    }
-    return ['task', 'history'].includes(n.source)
-      ? this._(n.message)
-      : n.message
+    return notificationMessage(n, (...a) => this._(...a))
   }
 
   _openDetail(n) {
     this._selectedNotification = n
   }
 
-  // Finished tasks state their outcome; other entries name their source.
   _sourceLabel(n) {
-    if (n.source === 'task' && n.type === 'success') {
-      return this._('Task completed')
-    }
-    if (n.source === 'task' && n.type === 'error') {
-      return this._('Task failed')
-    }
-    const labels = {
-      api: this._('Network'),
-      task: this._('Task'),
-      save: this._('_Save'),
-      browser: this._('Browser'),
-      history: this._('Revisions'),
-    }
-    return labels[n.source] ?? n.source
+    return notificationSourceLabel(n, (...a) => this._(...a))
   }
 
-  // The error message of a failed task, shown in place of the raw details
-  // (which stay available via Copy JSON). Empty when the failure carries no
-  // plain-text message.
   // eslint-disable-next-line class-methods-use-this
   _failureMessage(n) {
-    if (n.source !== 'task' || n.type !== 'error') {
-      return ''
-    }
-    const {info, result_object: resultObject} = n.detail ?? {}
-    const errorMessage = resultObject?.error?.message
-    if (typeof errorMessage === 'string' && errorMessage) {
-      return errorMessage
-    }
-    if (typeof info === 'string' && info) {
-      return info
-    }
-    return typeof resultObject === 'string' ? resultObject : ''
+    return notificationFailureMessage(n)
   }
 }
 
