@@ -11,11 +11,13 @@ import '../components/GrampsjsHomePerson.js'
 import '../components/GrampsjsStatistics.js'
 import '../components/GrampsjsConnectedNote.js'
 import '../components/GrampsjsImg.js'
+import '../components/GrampsjsGetStarted.js'
 import {
   TREE_CONFIG_HOME_PAGE_NOTE,
   TREE_CONFIG_HOME_PAGE_IMAGE,
   getTreeName,
 } from '../api.js'
+import {treeIsEmpty} from '../util.js'
 
 export class GrampsjsViewDashboard extends GrampsjsView {
   static get properties() {
@@ -198,38 +200,28 @@ export class GrampsjsViewDashboard extends GrampsjsView {
   // True while the tree holds no objects of any kind, so the dashboard can drop
   // the panels that would render as a row of blanks.
   get _treeIsEmpty() {
-    const counts = this.appState.dbInfo?.object_counts
-    if (!counts) {
-      return false
-    }
-    return Object.values(counts).every(count => !count)
+    return treeIsEmpty(this.appState.dbInfo)
   }
 
   // Onboarding guidance that advances with the tree: create the first person,
   // then connect people into families. It ends once families exist.
   _renderGetStarted() {
     const counts = this.appState.dbInfo?.object_counts
-    if (!counts || !this.appState.permissions.canEdit) {
+    if (!counts || !this.appState.permissions.canAdd) {
       return ''
     }
     if (counts.people === 0) {
-      return this._renderGetStartedCard(
-        this._(
-          'To start building your family tree, add yourself as a person or import a family tree file.'
-        ),
-        html`
-          <md-filled-tonal-button href="/new_person"
-            >${this._('New Person')}</md-filled-tonal-button
-          >
-          ${this.appState.permissions.canManageUsers
-            ? html`<md-filled-tonal-button href="/settings/administration"
-                >${this._('Import Family Tree')}</md-filled-tonal-button
-              >`
-            : ''}
-        `
-      )
+      return html`
+        <div>
+          <h3>${this._('Get started')}</h3>
+          <grampsjs-get-started
+            .appState="${this.appState}"
+          ></grampsjs-get-started>
+        </div>
+      `
     }
-    if (!counts.families) {
+    // adding a family links existing people, which needs edit permission
+    if (!counts.families && this.appState.permissions.canEdit) {
       return this._renderGetStartedCard(
         this._('Connect the people in your tree by adding a family.'),
         html`<md-filled-tonal-button href="/new_family"

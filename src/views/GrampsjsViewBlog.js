@@ -2,6 +2,7 @@ import {css, html} from 'lit'
 import {mdiPlus} from '@mdi/js'
 
 import '@material/web/fab/fab.js'
+import '@material/web/button/filled-tonal-button.js'
 import {GrampsjsView} from './GrampsjsView.js'
 import '../components/GrampsjsBlogPostPreview.js'
 import '../components/GrampsjsIcon.js'
@@ -17,10 +18,6 @@ export class GrampsjsViewBlog extends GrampsjsStaleDataMixin(GrampsjsView) {
       css`
         h2 {
           margin-left: 15px;
-        }
-
-        .muted {
-          opacity: 0.4;
         }
 
         #posts {
@@ -115,10 +112,18 @@ export class GrampsjsViewBlog extends GrampsjsStaleDataMixin(GrampsjsView) {
 
   renderPosts() {
     if (this._firstLoaded && this._dataSources.length === 0) {
+      if (!this.appState.permissions.canAdd) {
+        return ''
+      }
       return html`
-        <p class="muted">
-          ${this._("To start using the blog, add a source with tag 'Blog'.")}
-        </p>
+        <md-filled-tonal-button href="/new_blog_post">
+          <grampsjs-icon
+            slot="icon"
+            .path="${mdiPlus}"
+            color="currentColor"
+          ></grampsjs-icon>
+          ${this._('New Blog Post')}
+        </md-filled-tonal-button>
       `
     }
     if (this.loading) {

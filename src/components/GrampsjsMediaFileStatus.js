@@ -10,6 +10,9 @@ export class GrampsjsMediaFileStatus extends GrampsjsMediaStatus {
           ? html`${this.errorMessage(this._data.data)}`
           : html`${iconSuccess}`}
         ${this._('%s media objects with missing file', nTot)}
+        ${nTot && this.appState.permissions.canImport
+          ? html`&middot; <a href="/import">${this._('Import Media Files')}</a>`
+          : ''}
       </span>
     `
   }

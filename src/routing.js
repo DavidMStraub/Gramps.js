@@ -114,6 +114,7 @@ export const PAGE_TITLES = {
   tasks: 'Tasks',
   notifications: 'Notifications',
   tags: 'Tags',
+  import: 'Import',
   export: 'Export',
   reports: '_Reports',
   report: '_Reports',

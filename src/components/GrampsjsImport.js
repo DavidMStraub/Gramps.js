@@ -11,6 +11,8 @@ import './GrampsjsTaskProgressIndicator.js'
 import './GrampsjsImportPreviewDialog.js'
 import './GrampsjsImportCounts.js'
 import './GrampsjsImportExportReport.js'
+import './GrampsjsHelpButton.js'
+import './GrampsjsDocButton.js'
 
 const fileExtension = file => file.name.split('.').pop().toLowerCase()
 
@@ -23,7 +25,8 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
           display: none;
         }
 
-        .alert.error {
+        /* error messages from the backend can span several lines */
+        .alert.error.multiline {
           white-space: pre-line;
         }
       `,
@@ -56,7 +59,20 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
 
   render() {
     return html`
-      <h3>${this._('Import Family Tree')}</h3>
+      <h3>
+        ${this._('Import Family Tree')}
+        <grampsjs-help-button
+          path="administration/import/"
+          .appState="${this.appState}"
+        ></grampsjs-help-button>
+      </h3>
+
+      <p>
+        ${this._(
+          'Supported formats: %s',
+          'Gramps XML (.gramps), GEDCOM (.ged), GeneWeb (.gw), Pro-Gen (.def), vCard (.vcf), CSV (.csv)'
+        )}
+      </p>
 
       <p>
         <grampsjs-form-upload
@@ -85,13 +101,27 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
         ></grampsjs-task-progress-indicator>
       </p>
       ${this._importError
-        ? html`<p class="alert error">${this._importError}</p>`
+        ? html`<p class="alert error multiline">${this._importError}</p>`
         : ''}
       ${this._renderImportResult()}
       <grampsjs-import-preview-dialog
         .appState="${this.appState}"
       ></grampsjs-import-preview-dialog>
     `
+  }
+
+  _renderZipHint() {
+    return html`<div class="alert error">
+      ${this._('ZIP archives cannot be imported.')}
+      ${this._(
+        'If it contains a GEDCOM (.ged) file, unzip it and upload that file.'
+      )}
+      <grampsjs-doc-button
+        path="administration/import/"
+        label="${this._('How to fix this')}"
+        .appState="${this.appState}"
+      ></grampsjs-doc-button>
+    </div>`
   }
 
   _renderImportResult() {
@@ -221,6 +251,10 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
     }
 
     const ext = fileExtension(uploadForm.file)
+    if (ext === 'zip') {
+      this._uploadHint = this._renderZipHint()
+      return
+    }
     if (!['gpkg', 'gramps', 'gw', 'def', 'vcf', 'csv', 'ged'].includes(ext)) {
       this._uploadHint = html`<p class="alert error">
         ${this._('Unsupported format')}
@@ -238,15 +272,7 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
       </p>`
       return
     }
-    if (ext !== 'gramps') {
-      this._uploadHint = html`<p class="alert warn">
-        ${this._(
-          'If you intend to synchronize an existing Gramps database with Gramps Web, use the Gramps XML (.gramps) format instead.'
-        )}
-      </p>`
-    } else {
-      this._uploadHint = ''
-    }
+    this._uploadHint = ''
     this._file = uploadForm.file
   }
 }

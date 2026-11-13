@@ -69,6 +69,16 @@ export const emptyDate = {
   sortval: 0,
 }
 
+// Whether the tree holds no objects of any kind, per the object counts in
+// /api/metadata/. Unknown counts are not taken for an empty tree.
+export function treeIsEmpty(dbInfo) {
+  const counts = dbInfo?.object_counts
+  if (!counts) {
+    return false
+  }
+  return Object.values(counts).every(count => !count)
+}
+
 export function translate(strings, s) {
   if (s === undefined) {
     return ''

@@ -23,9 +23,10 @@ import {GrampsjsView} from './GrampsjsView.js'
 import '../components/GrampsjsPagination.js'
 import '../components/GrampsjsFilterChip.js'
 import '../components/GrampsjsFilters.js'
+import '../components/GrampsjsGetStarted.js'
 import {GrampsjsStaleDataMixin} from '../mixins/GrampsjsStaleDataMixin.js'
 
-import {fireEvent} from '../util.js'
+import {fireEvent, treeIsEmpty} from '../util.js'
 import {awaitTaskResponse} from '../taskResponse.js'
 import {tagFilter} from '../filterDefinitions.js'
 
@@ -208,7 +209,9 @@ export class GrampsjsViewObjectsBase extends GrampsjsStaleDataMixin(
     return html`
       ${this._renderFilter()}
       ${this._selectionMode ? this._renderBatchToolbar() : ''}
-      ${this.altView
+      ${this._showGetStarted
+        ? this._renderGetStarted()
+        : this.altView
         ? this.renderAltView()
         : html`
             <grampsjs-table
@@ -231,6 +234,31 @@ export class GrampsjsViewObjectsBase extends GrampsjsStaleDataMixin(
               @selection:changed="${this._handleSelectionChanged}"
             ></grampsjs-table>
           `}
+      ${this._showGetStarted ? '' : this._renderPagination()}
+      ${this.canAdd ? this.renderFab() : ''} ${this._renderColumnPickerDialog()}
+    `
+  }
+
+  get canAdd() {
+    return this.appState.permissions.canAdd
+  }
+
+  // In an empty tree, users who can add people see how to start in place of
+  // an empty list. Filters cannot match anything there, so they don't matter.
+  // This uses the global permission: views override canAdd for their own
+  // objects, such as families, which need edit permission too.
+  get _showGetStarted() {
+    return this.appState.permissions.canAdd && treeIsEmpty(this.appState.dbInfo)
+  }
+
+  _renderGetStarted() {
+    return html`<grampsjs-get-started
+      .appState="${this.appState}"
+    ></grampsjs-get-started>`
+  }
+
+  _renderPagination() {
+    return html`
       <grampsjs-pagination
         page="${this._page}"
         pages="${this._pages}"
@@ -239,13 +267,7 @@ export class GrampsjsViewObjectsBase extends GrampsjsStaleDataMixin(
         @page:changed="${this._handlePageChanged}"
         .appState="${this.appState}"
       ></grampsjs-pagination>
-
-      ${this.canAdd ? this.renderFab() : ''} ${this._renderColumnPickerDialog()}
     `
-  }
-
-  get canAdd() {
-    return this.appState.permissions.canAdd
   }
 
   // eslint-disable-next-line class-methods-use-this

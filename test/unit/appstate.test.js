@@ -86,6 +86,7 @@ describe('appStateUpdatePermissions', () => {
           'EditObject',
           'ViewPrivate',
           'EditOtherUser',
+          'ImportFile',
           'UseChat',
           'UpgradeSchema',
         ],
@@ -97,6 +98,7 @@ describe('appStateUpdatePermissions', () => {
     expect(result.permissions.canEdit).to.be.true
     expect(result.permissions.canViewPrivate).to.be.true
     expect(result.permissions.canManageUsers).to.be.true
+    expect(result.permissions.canImport).to.be.true
     expect(result.permissions.canUseChat).to.be.true
     expect(result.permissions.canUpgradeTree).to.be.true
   })
@@ -111,6 +113,7 @@ describe('appStateUpdatePermissions', () => {
     expect(result.permissions.canEdit).to.be.false
     expect(result.permissions.canViewPrivate).to.be.false
     expect(result.permissions.canManageUsers).to.be.false
+    expect(result.permissions.canImport).to.be.false
     expect(result.permissions.canUseChat).to.be.false
     expect(result.permissions.canUpgradeTree).to.be.false
   })
