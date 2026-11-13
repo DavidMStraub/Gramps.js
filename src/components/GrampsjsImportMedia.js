@@ -8,6 +8,7 @@ import {fireEvent} from '../util.js'
 import {dispatchErrorMessage} from '../taskResponse.js'
 import './GrampsjsFormUpload.js'
 import './GrampsjsTaskProgressIndicator.js'
+import './GrampsjsHelpButton.js'
 
 const STATE_ERROR = -1
 const STATE_INITIAL = 0
@@ -40,16 +41,38 @@ export class GrampsjsImportMedia extends GrampsjsAppStateMixin(LitElement) {
     this._uploadHint = ''
   }
 
+  // Whether the tree has no media objects for the files in an archive to be
+  // matched to. Unknown counts don't block the upload.
+  get _noMediaObjects() {
+    const counts = this.appState?.dbInfo?.object_counts
+    return Boolean(counts) && !counts.media
+  }
+
   render() {
+    const noMediaObjects = this._noMediaObjects
     return html`
-      <h3>${this._('Import Media Files')}</h3>
+      <h3>
+        ${this._('Import Media Files')}
+        <grampsjs-help-button
+          path="administration/import-media/"
+          .appState="${this.appState}"
+        ></grampsjs-help-button>
+      </h3>
       <p>
         ${this._('Upload a ZIP archive with files for existing media objects.')}
       </p>
+      ${noMediaObjects
+        ? html`<p>
+            ${this._(
+              'Import a family tree file first. The files in the ZIP archive are matched to its media objects.'
+            )}
+          </p>`
+        : ''}
 
       <p>
         <grampsjs-form-upload
           outlined
+          ?disabled=${noMediaObjects}
           accept="application/zip"
           id="upload-media"
           .appState="${this.appState}"
@@ -61,7 +84,7 @@ export class GrampsjsImportMedia extends GrampsjsAppStateMixin(LitElement) {
         <md-filled-button
           type="submit"
           @click="${this._submitMedia}"
-          ?disabled=${this._mediaState !== STATE_READY}
+          ?disabled=${noMediaObjects || this._mediaState !== STATE_READY}
           >${this._('Import')}</md-filled-button
         >
         <grampsjs-task-progress-indicator

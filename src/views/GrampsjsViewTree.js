@@ -21,7 +21,6 @@ import {
   mdiFitToScreen,
   mdiHomeAccount,
   mdiPencil,
-  mdiPlus,
   mdiTargetAccount,
 } from '@mdi/js'
 import {GrampsjsView} from './GrampsjsView.js'
@@ -882,12 +881,23 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
   }
 
   // Shown whenever no home person is set. An empty tree has nobody to pick, so
-  // it offers person creation. The first person becomes the home person, which
-  // brings the user straight back here with a chart to look at.
+  // users who can add people are shown how to start: creating a person or
+  // importing. The first person created becomes the home person, which brings
+  // the user straight back here with a chart to look at.
   _renderNoHomePerson() {
-    // A missing object_counts counts as empty: person creation leads somewhere
-    // either way, while the picker has nothing to offer an empty tree.
+    // A missing object_counts counts as empty: person creation and import lead
+    // somewhere either way, while the picker has nothing to offer an empty
+    // tree.
     const hasPeople = this.appState.dbInfo?.object_counts?.people
+    if (!hasPeople && this.appState.permissions?.canAdd) {
+      return html`
+        <div class="with-margin">
+          <grampsjs-get-started
+            .appState="${this.appState}"
+          ></grampsjs-get-started>
+        </div>
+      `
+    }
     // The Home link is the escape hatch for users whose permissions leave them
     // no action below.
     return html`
@@ -896,26 +906,8 @@ export class GrampsjsViewTree extends GrampsjsStaleDataMixin(GrampsjsView) {
           ${this._('No Home Person set.')}
           <a href="/">${this._('Home')}</a>
         </p>
-        ${hasPeople
-          ? this._renderHomePersonPicker()
-          : this._renderAddFirstPerson()}
+        ${hasPeople ? this._renderHomePersonPicker() : ''}
       </div>
-    `
-  }
-
-  _renderAddFirstPerson() {
-    if (!this.appState.permissions?.canAdd) {
-      return ''
-    }
-    return html`
-      <md-filled-button href="/new_person">
-        <grampsjs-icon
-          slot="icon"
-          path="${mdiPlus}"
-          color="currentColor"
-        ></grampsjs-icon>
-        ${this._('New Person')}
-      </md-filled-button>
     `
   }
 

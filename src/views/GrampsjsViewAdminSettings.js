@@ -5,8 +5,6 @@ import {buttonColorStyles} from '../SharedStyles.js'
 import '../components/GrampsjsCollapsibleSection.js'
 import '../components/GrampsjsBackups.js'
 import '../components/GrampsjsResearcher.js'
-import '../components/GrampsjsImport.js'
-import '../components/GrampsjsImportMedia.js'
 import '../components/GrampsjsMediaFileStatus.js'
 import '../components/GrampsjsMediaStatus.js'
 import '../components/GrampsjsDeleteAll.js'
@@ -272,7 +270,14 @@ export class GrampsjsViewAdminSettings extends GrampsjsView {
         <grampsjs-tree-quotas
           .appState="${this.appState}"
         ></grampsjs-tree-quotas>
-        <grampsjs-import .appState="${this.appState}"></grampsjs-import>
+        ${this.appState.permissions.canImport
+          ? html`
+              <h3>${this._('Import')}</h3>
+              <p>
+                <a href="/import">${this._('Import Family Tree')}</a>
+              </p>
+            `
+          : ''}
 
         <grampsjs-media-status
           .appState="${this.appState}"
@@ -282,10 +287,6 @@ export class GrampsjsViewAdminSettings extends GrampsjsView {
               .appState="${this.appState}"
             ></grampsjs-media-file-status>`
           : ''}
-
-        <grampsjs-import-media
-          .appState="${this.appState}"
-        ></grampsjs-import-media>
       </grampsjs-collapsible-section>
 
       <grampsjs-collapsible-section

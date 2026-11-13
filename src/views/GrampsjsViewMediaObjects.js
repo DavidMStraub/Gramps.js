@@ -244,15 +244,12 @@ export class GrampsjsViewMediaObjects extends GrampsjsViewObjectsBase {
     return html`
       ${this._renderFilter()}
       ${this._selectionMode ? this._renderBatchToolbar() : ''}
-      ${this._galleryView ? this.renderAltView() : this._renderMediaList()}
-      <grampsjs-pagination
-        page="${this._page}"
-        pages="${this._pages}"
-        total="${this._totalCount}"
-        pageSize="${this._pageSize}"
-        @page:changed="${this._handlePageChanged}"
-        .appState="${this.appState}"
-      ></grampsjs-pagination>
+      ${this._showGetStarted
+        ? this._renderGetStarted()
+        : html`${this._galleryView
+            ? this.renderAltView()
+            : this._renderMediaList()}
+          ${this._renderPagination()}`}
       ${this.canAdd ? this.renderFab() : ''}
       <grampsjs-view-media-lightbox
         active
