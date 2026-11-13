@@ -341,6 +341,8 @@ export class GrampsjsViewObject extends GrampsjsView {
       )
     } else if (e.detail.action === 'updateLinkedEvent') {
       this.updateLinkedEvent(e.detail.event, e.detail.data)
+    } else if (e.detail.action === 'updateLinkedMedia') {
+      this.updateLinkedMedia(e.detail.media, e.detail.data)
     } else if (e.detail.action === 'changeParticipantRef') {
       this.changeParticipantRef(e.detail.change)
     } else if (e.detail.action === 'addPlaceRef') {
@@ -821,6 +823,11 @@ export class GrampsjsViewObject extends GrampsjsView {
   // update an event linked to the object of this view
   updateLinkedEvent(event, data) {
     return this._updateObject(event, 'event', _obj => ({..._obj, ...data}))
+  }
+
+  // update a media object linked to the object of this view
+  updateLinkedMedia(media, data) {
+    return this._updateObject(media, 'media', _obj => ({..._obj, ...data}))
   }
 
   /*

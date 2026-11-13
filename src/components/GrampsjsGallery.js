@@ -5,6 +5,9 @@ import {
   mdiArrowRight,
   mdiDelete,
   mdiLinkPlus,
+  mdiLock,
+  mdiLockOpenVariantOutline,
+  mdiLockOutline,
   mdiPlus,
 } from '@mdi/js'
 
@@ -57,9 +60,9 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
           position: absolute;
           top: 4px;
           left: 4px;
-          right: 4px;
+          right: 40px;
           width: fit-content;
-          max-width: calc(100% - 8px);
+          max-width: calc(100% - 44px);
           box-sizing: border-box;
           padding: 4px 8px;
           border-radius: var(--md-sys-shape-corner-small, 8px);
@@ -84,6 +87,12 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
           pointer-events: none;
         }
 
+        .privacy-button {
+          position: absolute;
+          top: 4px;
+          right: 4px;
+        }
+
         .tile-overlay {
           position: absolute;
           bottom: 4px;
@@ -92,7 +101,8 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
           gap: 2px;
         }
 
-        .tile-overlay md-icon-button {
+        .tile-overlay md-icon-button,
+        .privacy-button {
           --md-icon-button-container-width: 32px;
           --md-icon-button-container-height: 32px;
           --md-icon-button-icon-size: 18px;
@@ -234,7 +244,9 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
               >${this._('Profile picture')}</span
             >`
           : ''}
-        ${privacyIcon
+        ${this.edit
+          ? this._renderPrivacyButton(i)
+          : privacyIcon
           ? html`<span class="privacy-badge">${privacyIcon}</span>`
           : ''}
         ${this.edit
@@ -289,6 +301,42 @@ export class GrampsjsGallery extends GrampsjsAppStateMixin(LitElement) {
           : ''}
       </div>
     `
+  }
+
+  /*
+  Toggles the privacy of the media object, for every object it is linked
+  to. The icon also shows a private link, which is set elsewhere.
+  */
+  _renderPrivacyButton(i) {
+    const media = this.media[i]
+    const privacy = rowPrivacy(media, this.mediaRef[i])
+    const paths = {private: mdiLock, link: mdiLockOutline}
+    return html`
+      <md-icon-button
+        class="privacy-button"
+        aria-label="${media.private
+          ? this._('Record is private')
+          : this._('Record is public')}"
+        @click="${e => {
+          e.stopPropagation()
+          this._handleMediaPrivacy(i)
+        }}"
+      >
+        <grampsjs-icon
+          path="${paths[privacy] ?? mdiLockOpenVariantOutline}"
+          color="var(--mdc-theme-secondary)"
+        ></grampsjs-icon>
+      </md-icon-button>
+    `
+  }
+
+  _handleMediaPrivacy(index) {
+    const media = this.media[index]
+    fireEvent(this, 'edit:action', {
+      action: 'updateLinkedMedia',
+      media,
+      data: {private: !media.private},
+    })
   }
 
   _handleRectClick(event) {

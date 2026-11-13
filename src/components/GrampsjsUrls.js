@@ -70,6 +70,7 @@ export class GrampsjsUrls extends GrampsjsEditableList {
       type: url.type || '',
       path: url.path || '',
       desc: url.desc || '',
+      private: !!url.private,
     }
     this.dialogContent = html`
       <grampsjs-form-edit-url

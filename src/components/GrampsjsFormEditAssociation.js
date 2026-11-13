@@ -103,6 +103,7 @@ class GrampsjsFormEditAssociation extends GrampsjsObjectForm {
           class="edit"
         ></grampsjs-form-select-object-list>
       </p>
+      ${this.renderPrivate()}
     `
   }
 

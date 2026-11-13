@@ -224,6 +224,7 @@ export class GrampsjsTreeChartAddPerson extends GrampsjsAppStateMixin(
     if (!isNew && isChild) {
       return html`
         <grampsjs-form-childref
+          noPrivate
           @object:save="${this._handleExistingPersonSave}"
           @object:cancel="${this._cancelForm}"
           .appState="${this.appState}"

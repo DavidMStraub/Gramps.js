@@ -74,6 +74,12 @@ export class GrampsjsRelationships extends GrampsjsAppStateMixin(LitElement) {
           margin-top: 0.5em;
           margin-bottom: 3em;
         }
+
+        /* long labels wrap on narrow screens */
+        p.button-list md-outlined-button {
+          max-width: 100%;
+          text-wrap: wrap;
+        }
       `,
     ]
   }

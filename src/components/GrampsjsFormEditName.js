@@ -13,12 +13,16 @@ class GrampsjsFormEditName extends GrampsjsObjectForm {
   static get properties() {
     return {
       isFormValid: {type: Boolean},
+      // the primary name has no privacy switch, since the person would
+      // then show as "Private"
+      primary: {type: Boolean},
     }
   }
 
   constructor() {
     super()
     this.isFormValid = false
+    this.primary = false
   }
 
   renderForm() {
@@ -50,6 +54,7 @@ class GrampsjsFormEditName extends GrampsjsObjectForm {
         .typesLocale="${this.typesLocale}"
       >
       </grampsjs-form-name>
+      ${this.primary ? '' : this.renderPrivate()}
     `
   }
 

@@ -65,6 +65,7 @@ class GrampsjsFormRepoRef extends GrampsjsObjectForm {
         .value="${this.data.media_type}"
       >
       </grampsjs-form-select-type>
+      ${this.renderPrivate()}
     `
   }
 

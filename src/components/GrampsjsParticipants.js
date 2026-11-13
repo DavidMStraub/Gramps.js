@@ -1,6 +1,5 @@
-import {html, css} from 'lit'
+import {html} from 'lit'
 import {classMap} from 'lit/directives/class-map.js'
-import {mdiStar} from '@mdi/js'
 
 import {GrampsjsEditableList} from './GrampsjsEditableList.js'
 import './GrampsjsImg.js'
@@ -41,6 +40,7 @@ export function participantRefRows(participants, backlinks, eventHandle) {
       occurrence,
       role,
       roleValue: typeString(ref?.role),
+      refPrivate: !!ref?.private,
       privacy: rowPrivacy(backlink, ref),
       backlink,
       title:
@@ -60,26 +60,23 @@ export function participantRefRows(participants, backlinks, eventHandle) {
   ]
 }
 
-export class GrampsjsParticipants extends GrampsjsEditableList {
-  static get styles() {
-    return [
-      ...super.styles,
-      css`
-        span[slot='supporting-text'] {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
-        grampsjs-icon.role-star {
-          width: 14px;
-          height: 14px;
-          flex-shrink: 0;
-        }
-      `,
-    ]
+/*
+The role and privacy of a participant's reference that the edit dialog
+changed, or null if it changed neither. An empty role keeps the stored one.
+*/
+export function participantRefChanges(data, row) {
+  const changes = {}
+  const role = typeString(data.role)
+  if (role && role !== row.roleValue) {
+    changes.role = role
   }
+  if (!!data.private !== row.refPrivate) {
+    changes.private = !!data.private
+  }
+  return Object.keys(changes).length ? changes : null
+}
 
+export class GrampsjsParticipants extends GrampsjsEditableList {
   static get properties() {
     return {
       backlinksPeople: {type: Array},
@@ -108,18 +105,7 @@ export class GrampsjsParticipants extends GrampsjsEditableList {
   }
 
   _roleLabel(role) {
-    return html`
-      <span slot="supporting-text">
-        ${this._isPrimaryRole(role)
-          ? html`<grampsjs-icon
-              class="role-star"
-              path="${mdiStar}"
-              color="currentColor"
-            ></grampsjs-icon>`
-          : ''}
-        ${this._(role)}
-      </span>
-    `
+    return html`<span slot="supporting-text">${this._(role)}</span>`
   }
 
   // Flatten {families, people} into a sorted normalized array for the base render()
@@ -209,7 +195,12 @@ export class GrampsjsParticipants extends GrampsjsEditableList {
     this.dialogContent = html`
       <grampsjs-form-eventref
         .appState="${this.appState}"
-        .data="${{ref: this.eventHandle, role: row.roleValue}}"
+        showPrivate
+        .data="${{
+          ref: this.eventHandle,
+          role: row.roleValue,
+          private: row.refPrivate,
+        }}"
         dialogTitle="${row.title}"
         @object:save="${e => this._handleEditSave(e, row)}"
         @object:cancel="${this._handleDialogCancel}"
@@ -218,14 +209,14 @@ export class GrampsjsParticipants extends GrampsjsEditableList {
   }
 
   _handleEditSave(e, row) {
-    const role = typeString(e.detail.data?.role)
-    if (role && role !== row.roleValue) {
+    const data = participantRefChanges(e.detail.data, row)
+    if (data) {
       this._fireChange({
         action: 'update',
         objectType: row.object_type,
         handle: row.handle,
         occurrence: row.occurrence,
-        data: {role},
+        data,
       })
     }
     this._closeDialog(e)
