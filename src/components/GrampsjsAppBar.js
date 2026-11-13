@@ -9,8 +9,6 @@ import '@material/web/button/filled-button.js'
 import '@material/web/progress/circular-progress.js'
 import '@material/web/progress/linear-progress.js'
 import {
-  mdiBellOutline,
-  mdiBellBadgeOutline,
   mdiArrowLeft,
   mdiCheck,
   mdiChevronRight,
@@ -24,6 +22,7 @@ import '@material/web/dialog/dialog.js'
 import '@material/web/button/text-button.js'
 
 import './GrampsjsAddMenu.js'
+import './GrampsjsNotificationMenu.js'
 import './GrampsjsSettingsMenu.js'
 import './GrampsjsTooltip.js'
 import './GrampsjsSearchBox.js'
@@ -182,28 +181,6 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
           );
         }
 
-        .notifications {
-          position: relative;
-        }
-
-        .badge {
-          position: absolute;
-          top: 6px;
-          right: 4px;
-          min-width: 18px;
-          height: 18px;
-          padding: 0 4px;
-          border-radius: 9px;
-          box-sizing: border-box;
-          background-color: var(--md-sys-color-error);
-          color: var(--md-sys-color-on-error);
-          font-size: 11px;
-          font-weight: 700;
-          line-height: 18px;
-          text-align: center;
-          pointer-events: none;
-        }
-
         .action-icon-wrapper {
           display: inline-flex;
           align-items: center;
@@ -271,7 +248,6 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
       pageTitle: {attribute: false},
       _scrolled: {state: true},
       _searching: {state: true},
-      _unreadCount: {state: true},
     }
   }
 
@@ -293,9 +269,6 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
     this._searching = false
     this._handleScroll = this._handleScroll.bind(this)
     this._focusSearch = this._focusSearch.bind(this)
-    this._unreadCount = 0
-    this._handleNotificationsChanged =
-      this._handleNotificationsChanged.bind(this)
     this._enableEditMode = this._enableEditMode.bind(this)
     this._disableEditMode = this._disableEditMode.bind(this)
     this._handleCloseRequest = this._handleCloseRequest.bind(this)
@@ -501,23 +474,10 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
             ?labelled="${!this._small}"
           ></grampsjs-add-menu>`
         : ''}
-      <span class="notifications">
-        <md-icon-button
-          id="button-notifications"
-          aria-label="${this._('Notifications')}"
-          @click="${() => this._handleNav('notifications')}"
-        >
-          <grampsjs-icon
-            path="${this._unreadCount > 0
-              ? mdiBellBadgeOutline
-              : mdiBellOutline}"
-            color="currentColor"
-          ></grampsjs-icon>
-        </md-icon-button>
-        ${this._unreadCount > 0
-          ? html`<span class="badge">${this._unreadCount}</span>`
-          : ''}
-      </span>
+      <grampsjs-notification-menu
+        .appState="${this.appState}"
+        id="button-notifications"
+      ></grampsjs-notification-menu>
       <grampsjs-tooltip for="button-notifications" .appState="${this.appState}"
         >${this._('Notifications')}</grampsjs-tooltip
       >
@@ -560,10 +520,6 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
     if (scrolled !== this._scrolled) {
       this._scrolled = scrolled
     }
-  }
-
-  _handleNotificationsChanged(e) {
-    this._unreadCount = e.detail.unreadCount
   }
 
   _toggleDrawer() {
@@ -668,14 +624,8 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
 
   connectedCallback() {
     super.connectedCallback()
-    const existing = this.appState?.getNotifications?.() ?? []
-    this._unreadCount = existing.filter(n => n?.read === false).length
     window.addEventListener('scroll', this._handleScroll, {passive: true})
     window.addEventListener('search:focus', this._focusSearch)
-    window.addEventListener(
-      'notifications:changed',
-      this._handleNotificationsChanged
-    )
     window.addEventListener('edit-mode:on', this._enableEditMode)
     window.addEventListener('edit-mode:off', this._disableEditMode)
     window.addEventListener('edit-mode:close-request', this._handleCloseRequest)
@@ -685,10 +635,6 @@ class GrampsjsAppBar extends GrampsjsAppStateMixin(LitElement) {
     super.disconnectedCallback()
     window.removeEventListener('scroll', this._handleScroll)
     window.removeEventListener('search:focus', this._focusSearch)
-    window.removeEventListener(
-      'notifications:changed',
-      this._handleNotificationsChanged
-    )
     window.removeEventListener('edit-mode:on', this._enableEditMode)
     window.removeEventListener('edit-mode:off', this._disableEditMode)
     window.removeEventListener(
