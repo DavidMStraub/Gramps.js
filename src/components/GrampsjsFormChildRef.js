@@ -11,6 +11,19 @@ import './GrampsjsFormString.js'
 import {GrampsjsObjectForm} from './GrampsjsObjectForm.js'
 
 class GrampsjsFormChildRef extends GrampsjsObjectForm {
+  static get properties() {
+    return {
+      // hide the switch for the privacy of the reference, where picking a
+      // person would make it read as the person's privacy
+      noPrivate: {type: Boolean},
+    }
+  }
+
+  constructor() {
+    super()
+    this.noPrivate = false
+  }
+
   // the form edits an existing reference if the data it was opened with
   // already points at a child; determined once, since selecting a person
   // sets `ref` on the data as well
@@ -63,7 +76,7 @@ class GrampsjsFormChildRef extends GrampsjsObjectForm {
         .typesLocale="${this.typesLocale}"
       >
       </grampsjs-form-select-type>
-      ${this.renderPrivate()}
+      ${this.noPrivate ? '' : this.renderPrivate()}
     `
   }
 
