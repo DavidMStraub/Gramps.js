@@ -245,8 +245,10 @@ export class GrampsjsViewObjectsBase extends GrampsjsStaleDataMixin(
 
   // In an empty tree, users who can add people see how to start in place of
   // an empty list. Filters cannot match anything there, so they don't matter.
+  // This uses the global permission: views override canAdd for their own
+  // objects, such as families, which need edit permission too.
   get _showGetStarted() {
-    return this.canAdd && treeIsEmpty(this.appState.dbInfo)
+    return this.appState.permissions.canAdd && treeIsEmpty(this.appState.dbInfo)
   }
 
   _renderGetStarted() {

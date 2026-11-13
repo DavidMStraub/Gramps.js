@@ -220,7 +220,8 @@ export class GrampsjsViewDashboard extends GrampsjsView {
         </div>
       `
     }
-    if (!counts.families) {
+    // adding a family links existing people, which needs edit permission
+    if (!counts.families && this.appState.permissions.canEdit) {
       return this._renderGetStartedCard(
         this._('Connect the people in your tree by adding a family.'),
         html`<md-filled-tonal-button href="/new_family"
