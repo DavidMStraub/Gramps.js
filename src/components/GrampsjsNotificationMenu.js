@@ -305,9 +305,10 @@ class GrampsjsNotificationMenu extends GrampsjsAppStateMixin(LitElement) {
     super.connectedCallback()
     this._notifications = this.appState?.getNotifications?.() ?? []
     this._activeTasks = this.appState?.getActiveTasks?.() ?? []
-    this._unreadCount = this._notifications.filter(
-      n => n?.read === false
-    ).length
+    // matches the count the notifications:changed events carry
+    this._unreadCount =
+      this._notifications.filter(n => n?.read === false).length +
+      runningTasks(this._activeTasks).length
     window.addEventListener(
       'notifications:changed',
       this._handleNotificationsChanged

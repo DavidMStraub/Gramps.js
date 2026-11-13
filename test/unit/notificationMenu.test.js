@@ -61,6 +61,24 @@ describe('notification menu', () => {
     expect(loadActiveTasks).toHaveBeenCalled()
   })
 
+  it('counts running tasks in the badge when it appears', () => {
+    const menu = makeMenu({
+      getNotifications: () => [
+        {...change, read: false},
+        {...apiError, read: true},
+      ],
+      getActiveTasks: () => [
+        {id: 't1', state: 'PROGRESS'},
+        {id: 't2', state: 'SUCCESS'},
+      ],
+    })
+
+    document.body.appendChild(menu)
+
+    expect(menu._unreadCount).toBe(2)
+    menu.remove()
+  })
+
   it('opens the notifications page on small screens', () => {
     const menu = makeMenu({screenSize: 'small'})
     const nav = vi.fn()
