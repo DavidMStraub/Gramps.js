@@ -34,7 +34,6 @@ import {
 } from '@mdi/js'
 
 import '../components/GrampsjsPagination.js'
-import '../components/GrampsjsTimedelta.js'
 import '../components/GrampsjsIcon.js'
 
 import {GrampsjsView} from './GrampsjsView.js'
@@ -73,6 +72,39 @@ const changeIcons = {
   Media_2: mdiImageMinus,
 }
 
+function localDayKey(date) {
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`
+}
+
+// Splits transactions, newest first, into runs of the same local calendar day
+export function groupByDay(transactions) {
+  const groups = []
+  for (const txn of transactions) {
+    const date = new Date(txn.timestamp * 1000)
+    const key = localDayKey(date)
+    const last = groups[groups.length - 1]
+    if (last?.key === key) {
+      last.transactions.push(txn)
+    } else {
+      groups.push({key, date, transactions: [txn]})
+    }
+  }
+  return groups
+}
+
+// Counts the changes of a transaction per object class and change type,
+// keyed like `changeIcons`
+export function countChanges(changes) {
+  const counts = {}
+  // eslint-disable-next-line camelcase
+  for (const {obj_class, trans_type} of changes ?? []) {
+    // eslint-disable-next-line camelcase
+    const key = `${obj_class}_${trans_type}`
+    counts[key] = (counts[key] || 0) + 1
+  }
+  return counts
+}
+
 export class GrampsjsViewRevisions extends GrampsjsStaleDataMixin(
   GrampsjsView
 ) {
@@ -84,27 +116,54 @@ export class GrampsjsViewRevisions extends GrampsjsStaleDataMixin(
           --md-list-item-label-text-color: var(--grampsjs-body-font-color-48);
         }
 
-        grampsjs-icon[slot='end'] {
+        h3.day {
+          font-family: var(--grampsjs-body-font-family);
+          font-size: 14px;
+          font-weight: var(--grampsjs-font-weight-medium);
+          color: var(--grampsjs-body-font-color-60);
+          margin: 16px 0 4px 0;
+        }
+
+        h3.day:first-child {
+          margin-top: 0;
+        }
+
+        md-list {
+          padding: 0;
+        }
+
+        .changes {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .change {
+          position: relative;
+          display: inline-flex;
+        }
+
+        .change grampsjs-icon {
           height: 22px;
           width: 22px;
           opacity: 0.9;
         }
 
         .counter {
-          position: relative;
+          position: absolute;
+          right: -8px;
+          top: -6px;
           color: var(--grampsjs-color-icon);
           font-size: 11px;
           min-width: 14px;
           height: 14px;
-          line-height: 16px;
-          left: -17px;
-          top: -6px;
+          padding: 0 2px;
+          box-sizing: border-box;
+          line-height: 14px;
           font-weight: 600;
           background-color: var(--grampsjs-color-icon-background);
           border-radius: 100px;
-          display: inline-block;
           text-align: center;
-          vertical-align: middle;
         }
       `,
     ]
@@ -129,9 +188,14 @@ export class GrampsjsViewRevisions extends GrampsjsStaleDataMixin(
 
   render() {
     return html`
-      <md-list>
-        ${this._data.map(txn => this._renderTransaction(txn))}
-      </md-list>
+      ${groupByDay(this._data).map(
+        group => html`
+          <h3 class="day">${this._formatDay(group.date)}</h3>
+          <md-list>
+            ${group.transactions.map(txn => this._renderTransaction(txn))}
+          </md-list>
+        `
+      )}
 
       <grampsjs-pagination
         page="${this._page}"
@@ -144,14 +208,27 @@ export class GrampsjsViewRevisions extends GrampsjsStaleDataMixin(
     `
   }
 
+  _formatDate(date, options) {
+    try {
+      return date.toLocaleString(
+        (this.appState?.i18n?.lang || 'en').replace('_', '-'),
+        options
+      )
+    } catch {
+      return date.toLocaleString('en', options)
+    }
+  }
+
+  _formatDay(date) {
+    return this._formatDate(date, {dateStyle: 'full'})
+  }
+
+  _formatTime(timestamp) {
+    return this._formatDate(new Date(timestamp * 1000), {timeStyle: 'short'})
+  }
+
   _renderTransaction(txn) {
-    // eslint-disable-next-line camelcase
-    const counts = txn.changes.reduce((acc, {obj_class, trans_type}) => {
-      // eslint-disable-next-line camelcase
-      const key = `${obj_class}_${trans_type}`
-      acc[key] = (acc[key] || 0) + 1
-      return acc
-    }, {})
+    const counts = countChanges(txn.changes)
 
     return html`<md-list-item
       ?interactive="${!!txn.changes?.length}"
@@ -164,33 +241,36 @@ export class GrampsjsViewRevisions extends GrampsjsStaleDataMixin(
         path="${mdiSourceCommit}"
         color="var(--grampsjs-body-font-color-50)"
       ></grampsjs-icon>
-      ${txn.changes?.length
-        ? Object.keys(counts).map(key =>
-            changeIcons[key]
-              ? html`<grampsjs-icon
-                  slot="end"
-                  path="${changeIcons[key]}"
-                  color="var(--grampsjs-body-font-color-45)"
-                ></grampsjs-icon>`
-              : ''
-          )
-        : html`<grampsjs-icon
-            slot="end"
-            path="${mdiTimelineQuestionOutline}"
-            color="var(--grampsjs-body-font-color-45)"
-          ></grampsjs-icon>`}
+      <div slot="end" class="changes">
+        ${txn.changes?.length
+          ? Object.keys(counts).map(key =>
+              changeIcons[key]
+                ? html`<span class="change">
+                    <grampsjs-icon
+                      path="${changeIcons[key]}"
+                      color="var(--grampsjs-body-font-color-45)"
+                    ></grampsjs-icon>
+                    ${counts[key] > 1
+                      ? html`<span class="counter">${counts[key]}</span>`
+                      : ''}
+                  </span>`
+                : ''
+            )
+          : html`<span class="change">
+              <grampsjs-icon
+                path="${mdiTimelineQuestionOutline}"
+                color="var(--grampsjs-body-font-color-45)"
+              ></grampsjs-icon>
+            </span>`}
+      </div>
       <div slot="supporting-text">
-        <span class="user">
-          ${txn.connection?.user
+        <span class="user"
+          >${txn.connection?.user
             ? this._renderUser(txn.connection?.user)
-            : this._('Unknown')},
-        </span>
-        <span class="time">
-          <grampsjs-timedelta
-            timestamp="${txn.timestamp}"
-            locale="${this.appState.i18n.lang}"
-          ></grampsjs-timedelta>
-        </span>
+            : this._('Unknown')}</span
+        >
+        &middot;
+        <span class="time">${this._formatTime(txn.timestamp)}</span>
       </div>
     </md-list-item>`
   }
