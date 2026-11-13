@@ -25,3 +25,17 @@ describe('profile picture badge', () => {
     expect(galleryDragging({from: 1, to: 3})._profilePictureIndex()).to.equal(0)
   })
 })
+
+describe('media privacy on the gallery', () => {
+  it('asks to toggle the privacy of the media object', () => {
+    const gallery = document.createElement('grampsjs-gallery')
+    const media = {handle: 'm1', private: false}
+    gallery.media = [media]
+    const actions = []
+    gallery.addEventListener('edit:action', e => actions.push(e.detail))
+    gallery._handleMediaPrivacy(0)
+    expect(actions).to.deep.equal([
+      {action: 'updateLinkedMedia', media, data: {private: true}},
+    ])
+  })
+})

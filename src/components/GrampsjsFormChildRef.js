@@ -63,6 +63,7 @@ class GrampsjsFormChildRef extends GrampsjsObjectForm {
         .typesLocale="${this.typesLocale}"
       >
       </grampsjs-form-select-type>
+      ${this.renderPrivate()}
     `
   }
 

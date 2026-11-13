@@ -32,6 +32,7 @@ class GrampsjsFormPrivate extends GrampsjsAppStateMixin(LitElement) {
       <label>
         ${this._('Private')}
         <md-switch
+          class="edit"
           icons
           @change="${this.handleChange}"
           ?selected="${this.checked}"

@@ -4,7 +4,7 @@ import '@material/web/iconbutton/icon-button.js'
 import '@material/web/list/list.js'
 import '@material/web/list/list-item.js'
 
-import {mdiAccountPlus, mdiDelete, mdiStar} from '@mdi/js'
+import {mdiAccountPlus, mdiDelete} from '@mdi/js'
 
 import {GrampsjsViewNewObject} from './GrampsjsViewNewObject.js'
 import {GrampsjsNewEventMixin} from '../mixins/GrampsjsNewEventMixin.js'
@@ -25,8 +25,6 @@ import {
 } from '../util.js'
 import '../components/GrampsjsImg.js'
 
-const PRIMARY_ROLES_EN = new Set(['Primary', 'Family'])
-
 export class GrampsjsViewNewEvent extends GrampsjsNewEventMixin(
   GrampsjsViewNewObject
 ) {
@@ -34,18 +32,6 @@ export class GrampsjsViewNewEvent extends GrampsjsNewEventMixin(
     return [
       super.styles,
       css`
-        .role-star {
-          width: 14px;
-          height: 14px;
-          flex-shrink: 0;
-        }
-
-        span[slot='supporting-text'] {
-          display: flex;
-          align-items: center;
-          gap: 4px;
-        }
-
         .object-icon {
           display: flex;
           align-items: center;
@@ -90,10 +76,6 @@ export class GrampsjsViewNewEvent extends GrampsjsNewEventMixin(
     `
   }
 
-  _isPrimaryRole(role) {
-    return PRIMARY_ROLES_EN.has(role)
-  }
-
   _renderParticipantsSection() {
     return html`
       <h3 class="label">${this._('Participants')}</h3>
@@ -105,16 +87,9 @@ export class GrampsjsViewNewEvent extends GrampsjsNewEventMixin(
                 (p, i) => html`
                   <md-list-item type="text">
                     ${p.label}
-                    <span slot="supporting-text">
-                      ${this._isPrimaryRole(p.role?.string || p.role || '')
-                        ? html`<grampsjs-icon
-                            class="role-star"
-                            path="${mdiStar}"
-                            color="currentColor"
-                          ></grampsjs-icon>`
-                        : ''}
-                      ${this._(p.role?.string || p.role || '')}
-                    </span>
+                    <span slot="supporting-text"
+                      >${this._(p.role?.string || p.role || '')}</span
+                    >
                     ${p.backlink?.media_list?.length
                       ? html`<grampsjs-img
                           handle="${p.backlink.media_list[0].ref}"

@@ -48,6 +48,7 @@ class GrampsjsFormEditAttribute extends GrampsjsObjectForm {
         value="${this.data?.value || ''}"
       >
       </grampsjs-form-string>
+      ${this.renderPrivate()}
     `
   }
 

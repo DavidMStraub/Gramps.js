@@ -1,10 +1,10 @@
 /*
 Dialog for editing an event from the page of a person or family linked to it.
 
-It edits the event's own fields. Roles are edited in the event's list of
-participants. If others are linked to the event too, the fields start as a
-read-only summary with the participants, and become editable only after the
-user chooses to edit the event for everyone.
+It edits the event's own fields, including its privacy. Roles are edited in
+the event's list of participants. If others are linked to the event too, the
+fields start as a read-only summary with the participants, and become
+editable only after the user chooses to edit the event for everyone.
 
 On save, it fires `object:save` with `data`, the changed event fields, or
 null if nothing changed.
@@ -19,7 +19,7 @@ import {GrampsjsObjectForm} from './GrampsjsObjectForm.js'
 import {GrampsjsNewEventMixin} from '../mixins/GrampsjsNewEventMixin.js'
 import {emptyDate, fireEvent, typeString} from '../util.js'
 
-const EVENT_FIELDS = ['type', 'date', 'description', 'place']
+const EVENT_FIELDS = ['type', 'date', 'description', 'place', 'private']
 
 function eventFieldValues(event) {
   return {
@@ -27,6 +27,7 @@ function eventFieldValues(event) {
     date: event?.date ?? emptyDate,
     description: event?.description || '',
     place: event?.place || '',
+    private: !!event?.private,
   }
 }
 
@@ -158,12 +159,12 @@ class GrampsjsFormEditEventInContext extends GrampsjsNewEventMixin(
       return html`<md-linear-progress indeterminate></md-linear-progress>`
     }
     if (!this._isShared) {
-      return this.renderEventFields()
+      return this._renderEditableFields()
     }
     if (this._editEvent) {
       return html`
         <div class="event-box">${this._renderParticipants()}</div>
-        ${this.renderEventFields()}
+        ${this._renderEditableFields()}
       `
     }
     return html`
@@ -180,6 +181,11 @@ class GrampsjsFormEditEventInContext extends GrampsjsNewEventMixin(
         </div>
       </div>
     `
+  }
+
+  // the privacy of the event applies to every participant
+  _renderEditableFields() {
+    return html`${this.renderEventFields()}${this.renderPrivate()}`
   }
 
   _renderSummary() {

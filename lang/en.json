@@ -488,5 +488,6 @@
   "E-mail address": "E-mail address",
   "Full name": "Full name",
   "Edit for everyone": "Edit for everyone",
-  "%s changes": "%s changes"
+  "%s changes": "%s changes",
+  "Applies only to this participant's link to the event.": "Applies only to this participant's link to the event."
 }

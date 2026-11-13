@@ -5,7 +5,10 @@ import {
   hasOtherParticipants,
 } from '../../src/components/GrampsjsFormEditEventInContext.js'
 import {GrampsjsViewObject} from '../../src/views/GrampsjsViewObject.js'
-import {participantRefRows} from '../../src/components/GrampsjsParticipants.js'
+import {
+  participantRefRows,
+  participantRefChanges,
+} from '../../src/components/GrampsjsParticipants.js'
 import {emptyDate, changeParticipantRefs} from '../../src/util.js'
 
 const date = {_class: 'Date', dateval: [1, 2, 1820, false]}
@@ -25,6 +28,7 @@ describe('editing an event from a linked person', () => {
       date,
       description: 'Baptism of Johann',
       place: 'p1',
+      private: false,
     })
   })
 
@@ -46,6 +50,19 @@ describe('editing an event from a linked person', () => {
     const undated = {...event, date: undefined}
     const data = {...eventInContextData(undated), date: emptyDate}
     expect(eventInContextChanges(data, undated)).to.equal(null)
+  })
+
+  it('reports a change of the event privacy', () => {
+    const data = {...eventInContextData(event), private: true}
+    expect(eventInContextChanges(data, event)).to.deep.equal({private: true})
+    const hidden = {...event, private: true}
+    expect(eventInContextData(hidden).private).to.equal(true)
+    expect(
+      eventInContextChanges(
+        {...eventInContextData(hidden), private: false},
+        hidden
+      )
+    ).to.deep.equal({private: false})
   })
 
   it('returns only the changed event fields', () => {
@@ -110,6 +127,28 @@ describe('rows of the participants list', () => {
     ])
   })
 
+  it('reads the privacy of the stored reference', () => {
+    const rows = participantRefRows(
+      participants,
+      [
+        {
+          handle: 'a',
+          event_ref_list: [
+            {ref: 'e1', role: 'Godfather', private: true},
+            {ref: 'e1', role: 'Witness'},
+          ],
+        },
+      ],
+      'e1'
+    )
+    expect(rows.map(r => r.refPrivate)).to.deep.equal([
+      false,
+      true,
+      false,
+      false,
+    ])
+  })
+
   it('reads the untranslated role from the stored reference', () => {
     const rows = participantRefRows(participants, backlinks, 'e1')
     expect(rows.map(r => r.roleValue)).to.deep.equal([
@@ -118,6 +157,43 @@ describe('rows of the participants list', () => {
       'Witness',
       '',
     ])
+  })
+})
+
+describe('editing the reference of a participant', () => {
+  const row = {roleValue: 'Godfather', refPrivate: false}
+
+  it('reports nothing when nothing changed', () => {
+    expect(
+      participantRefChanges({role: 'Godfather', private: false}, row)
+    ).to.equal(null)
+  })
+
+  it('reports the changed privacy of the reference', () => {
+    expect(
+      participantRefChanges({role: 'Godfather', private: true}, row)
+    ).to.deep.equal({private: true})
+    expect(
+      participantRefChanges(
+        {role: 'Godfather', private: false},
+        {...row, refPrivate: true}
+      )
+    ).to.deep.equal({private: false})
+  })
+
+  it('reports role and privacy together', () => {
+    expect(
+      participantRefChanges(
+        {role: {_class: 'EventRoleType', string: 'Witness'}, private: true},
+        row
+      )
+    ).to.deep.equal({role: 'Witness', private: true})
+  })
+
+  it('keeps the stored role when the role is empty', () => {
+    expect(participantRefChanges({role: '', private: false}, row)).to.equal(
+      null
+    )
   })
 })
 
@@ -242,6 +318,22 @@ describe('saving an event edited from a linked person', () => {
     const [url, sent] = view.appState.apiPut.mock.calls[0]
     expect(url).to.equal('/api/events/e1')
     expect(sent).to.deep.equal({...event, description: 'Baptism'})
+  })
+})
+
+describe('setting the privacy of media from a linked object', () => {
+  it('saves the privacy on the media object', async () => {
+    const view = Object.create(GrampsjsViewObject.prototype)
+    view.appState = {apiPut: vi.fn().mockResolvedValue({data: []})}
+    view._updateData = vi.fn().mockResolvedValue()
+    const media = {_class: 'Media', handle: 'm1', path: 'a.jpg', private: false}
+    await view.updateLinkedMedia(
+      {...media, extended: {}, profile: {}},
+      {private: true}
+    )
+    const [url, sent] = view.appState.apiPut.mock.calls[0]
+    expect(url).to.equal('/api/media/m1')
+    expect(sent).to.deep.equal({...media, private: true})
   })
 })
 

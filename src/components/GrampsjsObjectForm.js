@@ -4,6 +4,7 @@ import '@material/web/dialog/dialog.js'
 import '@material/web/button/text-button.js'
 import '@material/web/button/filled-button.js'
 
+import './GrampsjsFormPrivate.js'
 import {sharedStyles} from '../SharedStyles.js'
 import {fireEvent, emptyDate} from '../util.js'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
@@ -158,6 +159,18 @@ export class GrampsjsObjectForm extends GrampsjsAppStateMixin(LitElement) {
           </md-filled-button>
         </div>
       </md-dialog>
+    `
+  }
+
+  // switch for `this.data.private`, stored by _handleFormData
+  renderPrivate() {
+    return html`
+      <div class="spacer"></div>
+      <grampsjs-form-private
+        id="private"
+        ?checked="${this.data?.private}"
+        .appState="${this.appState}"
+      ></grampsjs-form-private>
     `
   }
 

@@ -51,6 +51,7 @@ class GrampsjsFormEditUrl extends GrampsjsObjectForm {
         >
         </grampsjs-form-string>
       </p>
+      ${this.renderPrivate()}
     `
   }
 }

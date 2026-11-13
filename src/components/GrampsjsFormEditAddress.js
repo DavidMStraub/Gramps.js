@@ -53,6 +53,7 @@ class GrampsjsFormEditAddress extends GrampsjsObjectForm {
         >
         </grampsjs-form-select-date>
       </p>
+      ${this.renderPrivate()}
     `
   }
 

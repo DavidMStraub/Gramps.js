@@ -94,6 +94,7 @@ export class GrampsjsNames extends GrampsjsEditableList {
         id="name"
         @object:save="${e => this._handleNameSave(handle, e)}"
         @object:cancel="${this._handleNameCancel}"
+        ?primary="${handle === 0}"
         .appState="${this.appState}"
         .data="${this.data[handle]}"
       >
