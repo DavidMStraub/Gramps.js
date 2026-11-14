@@ -9,7 +9,8 @@ import {
   participantRefRows,
   participantRefChanges,
 } from '../../src/components/GrampsjsParticipants.js'
-import {emptyDate, changeParticipantRefs} from '../../src/util.js'
+import {emptyDate, changeParticipantRefs, fireEvent} from '../../src/util.js'
+import '../../src/components/GrampsjsAttributes.js'
 import {changeRefAttributes} from '../../src/components/GrampsjsFormEventRef.js'
 import {fetchRefObjects} from '../../src/components/GrampsjsRefDetails.js'
 
@@ -480,5 +481,20 @@ describe('fetching the citations of a reference', () => {
     expect(appState.apiGet.mock.calls[0][0]).to.equal(
       '/api/citations/a?extend=all&profile=all&locale=de'
     )
+  })
+})
+
+describe('cancelling the attribute dialog inside another dialog', () => {
+  it('does not cancel the dialog around the attributes list', () => {
+    const outer = document.createElement('div')
+    const list = document.createElement('grampsjs-attributes')
+    outer.append(list)
+    const cancelled = []
+    outer.addEventListener('object:cancel', () => cancelled.push(true))
+    list.addEventListener('object:cancel', e => list._handleAttrCancel(e))
+    list.dialogContent = 'dialog'
+    fireEvent(list, 'object:cancel')
+    expect(list.dialogContent).to.equal('')
+    expect(cancelled).to.deep.equal([])
   })
 })
