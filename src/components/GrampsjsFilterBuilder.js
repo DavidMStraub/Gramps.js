@@ -430,7 +430,8 @@ export class GrampsjsFilterBuilder extends GrampsjsAppStateMixin(LitElement) {
         ${this._isEditing
           ? html`<div class="actions-start">
               <md-text-button
-                ?disabled="${this._savedFilters.length === 0}"
+                ?disabled="${this._savedFilters.length === 0 ||
+                this._catalogueKey === ''}"
                 @click="${this._openSavedList}"
                 >${this._('Saved filters')}</md-text-button
               >
