@@ -12,7 +12,7 @@ import {GrampsjsObjectForm} from './GrampsjsObjectForm.js'
 import {
   participantIntroStyles,
   renderParticipantIntro,
-} from './GrampsjsRefDetails.js'
+} from './participantRow.js'
 
 /*
 The attribute list after an action of the attributes editor in the dialog,
@@ -44,7 +44,7 @@ class GrampsjsFormEventRef extends GrampsjsObjectForm {
   static get styles() {
     return [
       ...super.styles,
-      participantIntroStyles,
+      ...participantIntroStyles,
       css`
         h4.label {
           margin-top: 24px;
@@ -57,8 +57,8 @@ class GrampsjsFormEventRef extends GrampsjsObjectForm {
   static get properties() {
     return {
       defaultRole: {type: String},
-      // the participant whose reference this edits, as
-      // {objectType, title, backlink}. Shows a sentence that the dialog
+      // the participant whose reference this edits, a row of
+      // participantRefRows. Shows a sentence that the dialog
       // applies to this participant only, and editors for the privacy,
       // citations, notes and attributes of the reference.
       participant: {type: Object},
@@ -74,7 +74,12 @@ class GrampsjsFormEventRef extends GrampsjsObjectForm {
   renderForm() {
     return html`
       ${this.participant
-        ? renderParticipantIntro((...args) => this._(...args), this.participant)
+        ? renderParticipantIntro(
+            this.participant,
+            this.appState,
+            (...args) => this._(...args),
+            {role: false}
+          )
         : ''}
       ${!this.new // select event shown only for new event ref
         ? ''

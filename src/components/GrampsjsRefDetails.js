@@ -7,58 +7,16 @@ import {html, css, LitElement} from 'lit'
 
 import '@material/web/dialog/dialog.js'
 import '@material/web/button/text-button.js'
-import '@material/web/list/list.js'
-import '@material/web/list/list-item.js'
 
 import './GrampsjsAttributes.js'
 import './GrampsjsSearchResultList.js'
 import {sharedStyles} from '../SharedStyles.js'
 import {fireEvent} from '../util.js'
-import {renderIcon} from '../objectRender.js'
+import {
+  participantIntroStyles,
+  renderParticipantIntro,
+} from './participantRow.js'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
-
-export const participantIntroStyles = css`
-  p.intro {
-    margin: 0 0 16px 0;
-    font-size: var(--md-sys-typescale-body-large-size, 16px);
-    line-height: var(--md-sys-typescale-body-large-line-height, 24px);
-    font-weight: var(--grampsjs-body-font-weight);
-    color: var(--grampsjs-body-font-color);
-  }
-
-  md-list.participant {
-    padding: 0 0 8px 0;
-  }
-`
-
-/*
-The sentence at the top of the dialogs for a participant's link to an
-event, and the participant as in the participants list. `translate` is
-the `_` of the dialog.
-*/
-export function renderParticipantIntro(
-  translate,
-  {objectType, title, backlink, role}
-) {
-  return html`
-    <p class="intro">
-      ${translate(
-        objectType === 'family'
-          ? 'The information below applies to this family in this event.'
-          : 'The information below applies to this person in this event.'
-      )}
-    </p>
-    <md-list class="participant">
-      <md-list-item type="text">
-        ${title}
-        ${role
-          ? html`<span slot="supporting-text">${translate(role)}</span>`
-          : ''}
-        ${renderIcon({object_type: objectType, object: backlink}, 'start')}
-      </md-list-item>
-    </md-list>
-  `
-}
 
 /*
 Fetch the objects with these handles, in their order. A handle that
@@ -90,7 +48,7 @@ class GrampsjsRefDetails extends GrampsjsAppStateMixin(LitElement) {
   static get styles() {
     return [
       sharedStyles,
-      participantIntroStyles,
+      ...participantIntroStyles,
       css`
         md-dialog {
           max-width: 100vw;
@@ -110,10 +68,8 @@ class GrampsjsRefDetails extends GrampsjsAppStateMixin(LitElement) {
   static get properties() {
     return {
       dialogTitle: {type: String},
-      objectType: {type: String},
-      participant: {type: String},
-      backlink: {type: Object},
-      role: {type: String},
+      // a row of participantRefRows
+      participant: {type: Object},
       citations: {type: Array},
       notes: {type: Array},
       attributes: {type: Array},
@@ -126,10 +82,7 @@ class GrampsjsRefDetails extends GrampsjsAppStateMixin(LitElement) {
   constructor() {
     super()
     this.dialogTitle = ''
-    this.objectType = 'person'
-    this.participant = ''
-    this.backlink = {}
-    this.role = ''
+    this.participant = {}
     this.citations = []
     this.notes = []
     this.attributes = []
@@ -147,12 +100,9 @@ class GrampsjsRefDetails extends GrampsjsAppStateMixin(LitElement) {
       >
         <div slot="headline">${this.dialogTitle}</div>
         <div slot="content">
-          ${renderParticipantIntro((...args) => this._(...args), {
-            objectType: this.objectType,
-            title: this.participant,
-            backlink: this.backlink,
-            role: this.role,
-          })}
+          ${renderParticipantIntro(this.participant, this.appState, (...args) =>
+            this._(...args)
+          )}
           ${this.attributes.length
             ? html`
                 <h4 class="label">${this._('Attributes')}</h4>

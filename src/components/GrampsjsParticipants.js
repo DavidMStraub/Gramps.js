@@ -15,7 +15,8 @@ import {
   typeString,
   objectIconPath,
 } from '../util.js'
-import {renderIcon, renderPrivacyIcon, rowPrivacy} from '../objectRender.js'
+import {rowPrivacy} from '../objectRender.js'
+import {renderParticipantRowContent} from './participantRow.js'
 
 const PRIMARY_ROLES_EN = new Set(['Primary', 'Family'])
 
@@ -156,10 +157,6 @@ export class GrampsjsParticipants extends GrampsjsEditableList {
     )
   }
 
-  _roleLabel(role) {
-    return html`<span slot="supporting-text">${this._(role)}</span>`
-  }
-
   // Flatten {families, people} into a sorted normalized array for the base render()
   sortData(dataCopy) {
     const participants = dataCopy[0]
@@ -195,11 +192,8 @@ export class GrampsjsParticipants extends GrampsjsEditableList {
           }
         }}"
       >
-        ${obj.title} ${renderPrivacyIcon(obj.privacy, this.appState)}
-        ${this._roleLabel(obj.role)}
-        ${renderIcon(
-          {object_type: obj.object_type, object: obj.backlink},
-          'start'
+        ${renderParticipantRowContent(obj, this.appState, (...args) =>
+          this._(...args)
         )}
         ${this._renderRefCounts(obj, i)}
       </md-list-item>
@@ -251,10 +245,7 @@ export class GrampsjsParticipants extends GrampsjsEditableList {
       <grampsjs-ref-details
         .appState="${this.appState}"
         dialogTitle="${this.eventTitle}"
-        objectType="${obj.object_type}"
-        participant="${obj.title}"
-        .backlink="${obj.backlink}"
-        role="${obj.role}"
+        .participant="${obj}"
         .citations="${obj.citations}"
         .notes="${obj.notes}"
         .attributes="${obj.attributes}"
@@ -305,11 +296,7 @@ export class GrampsjsParticipants extends GrampsjsEditableList {
     this.dialogContent = html`
       <grampsjs-form-eventref
         .appState="${this.appState}"
-        .participant="${{
-          objectType: row.object_type,
-          title: row.title,
-          backlink: row.backlink,
-        }}"
+        .participant="${row}"
         .data="${{
           ref: this.eventHandle,
           role: row.roleValue,
