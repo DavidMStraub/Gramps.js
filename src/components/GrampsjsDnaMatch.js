@@ -9,6 +9,7 @@ import './GrampsjsConnectionChart.js'
 import {personDisplayName, fireEvent} from '../util.js'
 import './GrampsjsObjectLink.js'
 import './GrampsjsSvgDownloadButton.js'
+import './GrampsjsHelpButton.js'
 import {renderIconSvg} from '../icons.js'
 
 export class GrampsjsDnaMatch extends GrampsjsAppStateMixin(LitElement) {
@@ -91,7 +92,15 @@ export class GrampsjsDnaMatch extends GrampsjsAppStateMixin(LitElement) {
       </div>
 
       <div class="container">
-        <h4>${this._('Raw match data')}</h4>
+        <h4>
+          ${this._('Raw match data')}
+          ${this.edit
+            ? html`<grampsjs-help-button
+                path="user-guide/dna-matches/"
+                .appState="${this.appState}"
+              ></grampsjs-help-button>`
+            : ''}
+        </h4>
         ${this.edit
           ? html`
               <grampsjs-form-edit-match
