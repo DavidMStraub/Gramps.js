@@ -4,7 +4,10 @@ import {zoomTransform} from 'd3-zoom'
 
 import {fireEvent} from '../../src/util.js'
 
-import {GrampsjsYtreeLineage} from '../../src/components/GrampsjsYtreeLineage.js'
+import {
+  GrampsjsYtreeLineage,
+  biologicalFatherHandle,
+} from '../../src/components/GrampsjsYtreeLineage.js'
 import {GrampsjsDnaMatchTable} from '../../src/components/GrampsjsDnaMatchTable.js'
 import {GrampsjsViewDnaMatches} from '../../src/views/GrampsjsViewDnaMatches.js'
 import {GrampsjsDnaMatches} from '../../src/components/GrampsjsDnaMatches.js'
@@ -44,6 +47,108 @@ describe('GrampsjsYtreeLineage', () => {
     const chart = boxes.getChartData()
     // B formed 400 years before 2000, i.e. 1600: 360 years to 1960
     expect(chart.at(-2).connectorText).toContain('18')
+  })
+
+  it('places the documented paternal line between clades and person', () => {
+    const born = (handle, year) => ({
+      handle,
+      gramps_id: handle,
+      primary_name: {first_name: handle},
+      birth_ref_index: year ? 0 : -1,
+      extended: {events: year ? [{date: {year}}] : []},
+    })
+    const element = lineage(
+      [clade('A', 1000), clade('B', 400)],
+      born('son', 1960)
+    )
+    // father without a birth year, grandfather born 1880
+    element._ancestors = [born('father'), born('grandfather', 1880)]
+    const chart = element.getChartData()
+    expect(chart.map(box => box.name)).toEqual([
+      'A',
+      'B',
+      'grandfather …',
+      'father …',
+      'son …',
+    ])
+    expect(chart.map(box => !!box.documented)).toEqual([
+      false,
+      false,
+      true,
+      true,
+      false,
+    ])
+    // B formed in 1600: 280 years to 1880, 14 generations
+    expect(chart[1].connectorText).toContain('14')
+  })
+
+  it('counts generations from the oldest dated person of the line', () => {
+    const element = lineage([clade('A', 1000), clade('B', 400)], {
+      handle: 'son',
+      birth_ref_index: 0,
+      extended: {events: [{date: {year: 1960}}]},
+    })
+    // two undated generations above the son
+    element._ancestors = [{handle: 'father'}, {handle: 'grandfather'}]
+    const chart = element.getChartData()
+    // 18 generations from 1600 to 1960, two of them documented
+    expect(chart[1].connectorText).toContain('16')
+  })
+
+  it('counts no generations from a clade without an age', () => {
+    const element = lineage([clade('A', 1000), clade('B', '')], {
+      birth_ref_index: 0,
+      extended: {events: [{date: {year: 1960}}]},
+    })
+    expect(element.getChartData().at(-2).connectorText).toBe('')
+  })
+
+  it('follows only birth fathers up the paternal line', () => {
+    const person = parentFamilies => ({
+      handle: 'child',
+      extended: {parent_families: parentFamilies},
+    })
+    const family = (father, frel) => ({
+      father_handle: father,
+      child_ref_list: [{ref: 'child', ...(frel && {frel})}],
+    })
+    expect(biologicalFatherHandle(person([family('dad')]))).toBe('dad')
+    expect(
+      biologicalFatherHandle(
+        person([family('adoptive', 'Adopted'), family('dad', 'Birth')])
+      )
+    ).toBe('dad')
+    expect(
+      biologicalFatherHandle(person([family('step', 'Stepchild')]))
+    ).toBeNull()
+    expect(biologicalFatherHandle(person([family('')]))).toBeNull()
+    expect(biologicalFatherHandle({handle: 'child'})).toBeNull()
+  })
+
+  it('loads the paternal line father first and stops at a cycle', async () => {
+    const child = (handle, father) => ({
+      handle,
+      extended: {
+        parent_families: [
+          {father_handle: father, child_ref_list: [{ref: handle}]},
+        ],
+      },
+    })
+    // the grandfather is recorded as the father of the son
+    const people = {
+      son: child('son', 'father'),
+      father: child('father', 'grandfather'),
+      grandfather: child('grandfather', 'son'),
+    }
+    const element = lineage([], people.son)
+    element.appState.apiGet = vi.fn(async url => ({
+      data: people[url.match(/people\/(\w+)/)[1]],
+    }))
+    await element._fetchPaternalAncestors()
+    expect(element._ancestors.map(person => person.handle)).toEqual([
+      'father',
+      'grandfather',
+    ])
   })
 
   it('offers the expand button whenever clades are hidden', () => {
