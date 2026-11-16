@@ -178,6 +178,14 @@ describe('matchRelationshipEstimate', () => {
     expect(check.group).toBe(6)
   })
 
+  it('counts an ancestor listed twice once', () => {
+    const {check} = matchRelationshipEstimate({
+      ...match,
+      ancestor_handles: ['a1', 'a1'],
+    })
+    expect(check.group).toBe(6)
+  })
+
   it('skips the check without a tree relationship', () => {
     expect(
       matchRelationshipEstimate({...match, distance: null}).check

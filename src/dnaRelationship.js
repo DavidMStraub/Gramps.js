@@ -331,7 +331,8 @@ they are not related) and their common ancestors.
 */
 export function matchRelationshipEstimate(match) {
   const estimate = estimateRelationship(match?.segments)
-  const ancestors = Math.min(match?.ancestor_handles?.length ?? 0, 2)
+  // An ancestor reached by several paths is listed once per path
+  const ancestors = Math.min(new Set(match?.ancestor_handles ?? []).size, 2)
   const check = match?.distance
     ? checkTreeRelationship(estimate, match.distance, ancestors)
     : null
