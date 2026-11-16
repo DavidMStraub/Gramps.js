@@ -187,7 +187,7 @@ describe('GrampsjsConnectionChart', () => {
     expect(fittedHeight({...bounds, yMax: 2000}, 800, limits)).toBe(600)
   })
 
-  it('keeps card clicks from opening the tree view', () => {
+  it("opens the person's page on a card click", () => {
     const element = new GrampsjsConnectionChart()
     element.appState = {i18n: {strings: {}, lang: 'en'}}
     element.grampsId1 = 'I1'
@@ -195,15 +195,18 @@ describe('GrampsjsConnectionChart', () => {
     element._data = {data: [{handle: 'p1'}]}
     const root = document.createElement('div')
     document.body.append(root)
-    render(element.renderContent(), root)
+    render(element.renderContent(), root, {host: element})
     const card = document.createElement('div')
     root.querySelector('#container').append(card)
     const selected = vi.fn()
+    const nav = vi.fn()
     window.addEventListener('pedigree:person-selected', selected)
+    element.addEventListener('nav', nav)
     fireEvent(card, 'pedigree:person-selected', {grampsId: 'I1'})
     window.removeEventListener('pedigree:person-selected', selected)
     root.remove()
     expect(selected).not.toHaveBeenCalled()
+    expect(nav.mock.calls[0][0].detail).toEqual({path: 'person/I1'})
   })
 
   describe('container height', () => {
@@ -246,34 +249,42 @@ describe('GrampsjsConnectionChart', () => {
       return {element, container}
     }
 
-    it('fits the chart of other people with the same root person', async () => {
+    it('fits the height and zoom to the chart of each pair of people', async () => {
       const {element, container} = chartElement()
       element._layout = await layoutRelationships(graph, 'R')
       element.updated(new Map())
       const {k} = zoomTransform(element._chart.node)
+      const height = container.style.height
       element._chart.viewport.zoomBy(0.5)
-      expect(zoomTransform(element._chart.node).k).toBeCloseTo(k / 2)
-      container.style.height = '500px'
       element.grampsId2 = 'I_M'
       element._layout = await layoutRelationships(graph, 'R')
       element.updated(new Map())
-      expect(container.style.height).toBe(element._height)
+      expect(container.style.height).toBe(height)
       expect(zoomTransform(element._chart.node).k).toBeCloseTo(k)
     })
 
-    it('keeps the height of the same people after loading again', async () => {
+    it('is as high as the chart, without a maximum', async () => {
+      const {element, container} = chartElement()
+      element._layout = await layoutRelationships(graph, 'R')
+      element._layout.bounds = {...element._layout.bounds, yMax: 3000}
+      element.updated(new Map())
+      expect(parseFloat(container.style.height)).toBeGreaterThan(2000)
+    })
+
+    it('keeps the fitted height while loading again', async () => {
       const {element, container} = chartElement()
       element._layout = await layoutRelationships(graph, 'R')
       element.updated(new Map())
-      container.style.height = '550px'
-      element.handleResize()
-      element._layout = await layoutRelationships(graph, 'R')
-      element.updated(new Map())
-      expect(container.style.height).toBe('550px')
       const root = document.createElement('div')
       render(element.renderLoading(), root)
-      expect(root.firstElementChild.style.height).toBe('550px')
+      expect(root.firstElementChild.style.height).toBe(container.style.height)
     })
+  })
+
+  it('leaves the wheel and touch to the page', () => {
+    const element = new GrampsjsConnectionChart()
+    const listeners = element._chart.node.__on ?? []
+    expect(listeners.some(({name}) => name === 'zoom')).toBe(false)
   })
 
   it('renders no frame without people', () => {
