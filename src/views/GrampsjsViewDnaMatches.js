@@ -9,7 +9,7 @@ import '../components/GrampsjsDnaMatches.js'
 import '../components/GrampsjsDnaMatch.js'
 import '../components/GrampsjsFormNewMatch.js'
 import '../components/GrampsjsChromosomeBrowser.js'
-import '../components/GrampsjsSvgDownloadButton.js'
+import '../components/GrampsjsDownloadButton.js'
 
 import {GrampsjsViewDnaBase} from './GrampsjsViewDnaBase.js'
 
@@ -48,6 +48,7 @@ export class GrampsjsViewDnaMatches extends GrampsjsViewDnaBase {
     this.chromosome = false
     this.matches = false
     this.grampsIdMatch = ''
+    this._boundToggleEditMode = () => this._toggleEditMode()
   }
 
   /* Implemented abstract methods */
@@ -132,11 +133,12 @@ export class GrampsjsViewDnaMatches extends GrampsjsViewDnaBase {
           )}
         </md-filled-select>
         ${this.chromosome && !this._dnaDataLoading && this._dnaData.data?.length
-          ? html`<grampsjs-svg-download-button
+          ? html`<grampsjs-download-button
               filename="${this.grampsId}-chromosomes.svg"
-              .svgDocument=${() => this._chromosomeSvg()}
+              mimeType="image/svg+xml"
+              .content=${() => this._chromosomeSvg()}
               .appState="${this.appState}"
-            ></grampsjs-svg-download-button>`
+            ></grampsjs-download-button>`
           : ''}
       </div>
     `
@@ -173,6 +175,33 @@ export class GrampsjsViewDnaMatches extends GrampsjsViewDnaBase {
       >
       </grampsjs-form-new-match>
     `
+  }
+
+  connectedCallback() {
+    super.connectedCallback()
+    window.addEventListener('edit-mode:toggle', this._boundToggleEditMode)
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener('edit-mode:toggle', this._boundToggleEditMode)
+    super.disconnectedCallback()
+  }
+
+  // The "e" shortcut edits the match that is shown, like the edit button
+  _toggleEditMode() {
+    if (
+      !this.active ||
+      !this.matches ||
+      !this.grampsIdMatch ||
+      !this.appState?.permissions?.canEdit
+    ) {
+      return
+    }
+    if (this.edit) {
+      fireEvent(this, 'edit-mode:close-request')
+    } else {
+      this._handleClickEdit()
+    }
   }
 
   _handleClickEdit() {

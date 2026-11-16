@@ -507,5 +507,10 @@
   "%s files could not be stored.": "%s files could not be stored.",
   "The archive has no file for %s media objects.": "The archive has no file for %s media objects.",
   "Uploading file: %s": "Uploading file: %s",
-  "Your tree already contains people. Importing a file again creates duplicates.": "Your tree already contains people. Importing a file again creates duplicates."
+  "Your tree already contains people. Importing a file again creates duplicates.": "Your tree already contains people. Importing a file again creates duplicates.",
+  "Estimated relationship": "Estimated relationship",
+  "The shared DNA is unlikely for the relationship in the tree.": "The shared DNA is unlikely for the relationship in the tree.",
+  "Relative of degree %s": "Relative of degree %s",
+  "Parent or child": "Parent or child",
+  "Full sibling": "Full sibling"
 }
