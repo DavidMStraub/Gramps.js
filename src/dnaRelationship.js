@@ -96,10 +96,24 @@ export const RELATIONSHIP_CLASSES = Array.from(
   ])
   .filter(({d, a}) => isModeled(d, a))
 
-function isAutosome(chromosome) {
+// The autosome number of a chromosome label such as "7" or "chr7", or null
+function autosomeNumber(chromosome) {
   const label = String(chromosome).trim().toUpperCase().replace(/^CHR/, '')
   const number = Number(label)
   return Number.isInteger(number) && number >= 1 && number <= AUTOSOMES
+    ? number
+    : null
+}
+
+function isAutosome(chromosome) {
+  return autosomeNumber(chromosome) !== null
+}
+
+// A segment position in base pairs; NaN when it is missing or blank
+function position(value) {
+  return value === null || value === undefined || String(value).trim() === ''
+    ? NaN
+    : Number(value)
 }
 
 // Lengths in cM of the autosomal segments that have a positive length
@@ -110,23 +124,44 @@ export function autosomalLengths(segments) {
     .filter(cM => Number.isFinite(cM) && cM > 0)
 }
 
-// Shared fraction of the autosomes in base pairs, or null without positions
+// Shared fraction of the autosomes in base pairs, or null when a segment has
+// no usable positions. Overlapping segments, such as the same match imported
+// from two companies, count once.
 export function autosomalCoverage(segments) {
-  const autosomal = (segments ?? []).filter(seg => isAutosome(seg.chromosome))
+  const intervals = (segments ?? [])
+    .filter(seg => isAutosome(seg.chromosome))
+    .map(seg => ({
+      chromosome: autosomeNumber(seg.chromosome),
+      start: position(seg.start),
+      stop: position(seg.stop),
+    }))
   if (
-    autosomal.length === 0 ||
-    autosomal.some(
-      seg =>
-        !Number.isFinite(Number(seg.start)) ||
-        !Number.isFinite(Number(seg.stop))
+    intervals.length === 0 ||
+    intervals.some(
+      ({start, stop}) =>
+        !Number.isFinite(start) || !Number.isFinite(stop) || stop <= start
     )
   ) {
     return null
   }
-  const bp = autosomal.reduce(
-    (sum, seg) => sum + Math.abs(Number(seg.stop) - Number(seg.start)),
-    0
-  )
+  intervals.sort((a, b) => a.chromosome - b.chromosome || a.start - b.start)
+  let bp = 0
+  let current = null
+  for (const interval of intervals) {
+    if (
+      current &&
+      interval.chromosome === current.chromosome &&
+      interval.start <= current.stop
+    ) {
+      current.stop = Math.max(current.stop, interval.stop)
+    } else {
+      if (current) {
+        bp += current.stop - current.start
+      }
+      current = {...interval}
+    }
+  }
+  bp += current.stop - current.start
   return bp / TOTAL_AUTOSOME_BP
 }
 

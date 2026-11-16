@@ -367,6 +367,42 @@ describe('coverage', () => {
     expect(autosomalCoverage(FIRST_COUSINS)).toBeNull()
     expect(sharedPercent(FIRST_COUSINS)).toBeNull()
   })
+
+  it('is unknown with blank, zero or reversed positions', () => {
+    const segment = {chromosome: '1', start: 1000, stop: 2000000, cM: 20}
+    expect(autosomalCoverage([segment])).not.toBeNull()
+    for (const positions of [
+      {start: null, stop: null},
+      {start: '', stop: ''},
+      {start: 0, stop: 0},
+      {start: 2000000, stop: 1000},
+    ]) {
+      expect(autosomalCoverage([{...segment, ...positions}])).toBeNull()
+    }
+  })
+
+  it('counts overlapping segments once', () => {
+    const half = covering(0.5)
+    const relabelled = half.map(seg => ({
+      ...seg,
+      chromosome: `chr${seg.chromosome}`,
+    }))
+    expect(autosomalCoverage([...half, ...relabelled])).toBeCloseTo(0.5)
+    expect(estimateRelationship([...half, ...relabelled]).parentChild).toBe(
+      false
+    )
+  })
+
+  it('treats a missing parent/child coverage as unchecked', () => {
+    const noPositions = covering(0.98).map(seg => ({
+      ...seg,
+      start: 0,
+      stop: 0,
+    }))
+    const estimate = estimateRelationship(noPositions)
+    expect(estimate.coverage).toBeNull()
+    expect(checkTreeRelationship(estimate, 1, 1)).toBeNull()
+  })
 })
 
 describe('parent and child', () => {
@@ -519,7 +555,7 @@ describe('GrampsjsDownloadButton', () => {
 })
 
 describe('editing a match', () => {
-  it('shows only the editor', () => {
+  it('shows only the editor and its help', () => {
     const el = new GrampsjsDnaMatch()
     el.appState = {
       i18n: {strings: {}, lang: 'en'},
@@ -531,7 +567,11 @@ describe('editing a match', () => {
     render(el.render(), root)
     expect(root.querySelector('grampsjs-form-edit-match')).not.toBeNull()
     expect(root.querySelector('dl')).toBeNull()
+    expect(root.querySelector('grampsjs-form-edit-match').helpPath).toBe(
+      'user-guide/dna-matches/'
+    )
     expect(root.querySelector('h4')).toBeNull()
+    expect(root.querySelector('grampsjs-dna-match-table')).toBeNull()
     expect(root.querySelector('grampsjs-connection-chart')).toBeNull()
   })
 
