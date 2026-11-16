@@ -667,6 +667,64 @@ describe('import: preview, confirmation and result', () => {
     expect(element._busy).toBe(false)
   })
 
+  it('detaches from a replaced preview task before uploading', async () => {
+    const apiPost = answers({task: {id: 'p1'}})
+    const {element, upload} = makeImport({apiPost})
+    const prog = element.renderRoot.querySelector('#progress-tree')
+
+    const first = element._submit()
+    await vi.waitFor(() => expect(prog.taskId).toBe('p1'))
+    upload.file = fileB
+    element._handleUploadChanged()
+    let taskIdAtUpload
+    apiPost.mockImplementationOnce(async () => {
+      taskIdAtUpload = prog.taskId
+      return {error: 'stop'}
+    })
+    await element._submit()
+
+    expect(taskIdAtUpload).toBe('')
+    finishTask('p1', {state: 'SUCCESS', result_object: preview})
+    await first
+  })
+
+  it("passes the app's home person details to the picker", async () => {
+    const details = {handle: 'h1', gramps_id: 'I0001'}
+    const el = await mount('grampsjs-import', {
+      appState: {
+        settings: {homePerson: 'I0001'},
+        i18n: {strings: {}},
+        permissions: {},
+        getActiveTasks: () => [],
+      },
+      homePersonDetails: details,
+      homePersonMissing: false,
+      _importResult: {people: 2, messages: []},
+      _askHomePerson: true,
+    })
+
+    const picker = el.shadowRoot.querySelector('grampsjs-home-person')
+    expect(picker.homePersonDetails).toBe(details)
+    expect(picker.homePersonGrampsId).toBe('I0001')
+  })
+
+  it('stops reconnecting to import tasks by name while busy', async () => {
+    const el = await mount('grampsjs-import', {
+      appState: {
+        settings: {},
+        i18n: {strings: {}},
+        permissions: {},
+        getActiveTasks: () => [],
+      },
+    })
+    const prog = el.shadowRoot.querySelector('#progress-tree')
+    expect(prog.taskName).toBe('importFile')
+
+    el._busy = true
+    await el.updateComplete
+    expect(prog.taskName).toBe('')
+  })
+
   it('refreshes for a task it did not start only when idle', () => {
     const {element} = makeImport({apiPost: vi.fn()})
 

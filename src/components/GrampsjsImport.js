@@ -42,11 +42,15 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
       _importResult: {type: Object},
       _importError: {type: String},
       _askHomePerson: {type: Boolean},
+      homePersonDetails: {type: Object},
+      homePersonMissing: {type: Boolean},
     }
   }
 
   constructor() {
     super()
+    this.homePersonDetails = {}
+    this.homePersonMissing = false
     // The selected file, if it can be imported.
     this._file = null
     this._busy = false
@@ -97,7 +101,7 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
         >
         <grampsjs-task-progress-indicator
           id="progress-tree"
-          taskName="importFile"
+          .taskName="${this._busy ? '' : 'importFile'}"
           size="20"
           hideAfter="0"
           .appState="${this.appState}"
@@ -158,6 +162,8 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
     }
     return html`<grampsjs-home-person
       .appState="${this.appState}"
+      .homePersonDetails=${this.homePersonDetails}
+      .homePersonMissing=${this.homePersonMissing}
       .homePersonGrampsId="${this.appState.settings?.homePerson ?? ''}"
     ></grampsjs-home-person>`
   }
@@ -212,6 +218,18 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
   // with null and leaves the indicator to the new run.
   async _post(op, file, dryRun) {
     const prog = this.renderRoot.querySelector('#progress-tree')
+    // Detach from the task of a replaced or previous run, so its status
+    // updates do not overwrite this upload's progress. While busy, the
+    // indicator has no taskName, so it does not reattach to such a task by
+    // name either; the run attaches its own task. Changing the task ID
+    // resets and closes the indicator on its next update, so wait for it.
+    if (prog.taskId) {
+      prog.taskId = ''
+      await prog.updateComplete
+      if (this._op !== op) {
+        return null
+      }
+    }
     prog.reset()
     prog.open = true
     const query = dryRun ? '?dry_run=true' : ''
