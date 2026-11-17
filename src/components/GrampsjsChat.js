@@ -16,6 +16,7 @@ import {
   updateTaskStatus,
 } from '../api.js'
 import {stripChatHistoryRaw} from '../chatHistory.js'
+import {chatVisionAvailable} from '../chatImages.js'
 import {fireEvent, makeHandle} from '../util.js'
 
 function delay(ms) {
@@ -178,6 +179,7 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
                   <grampsjs-chat-message
                     type="${message.role}"
                     .message="${message.message}"
+                    .images="${message.images ?? []}"
                     .metadata="${message.metadata ?? null}"
                     .proposal="${message.proposal ?? null}"
                     proposalStatus="${message.proposalStatus ?? ''}"
@@ -192,6 +194,7 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
           <div class="prompt">
             <grampsjs-chat-prompt
               ?loading="${this._busy}"
+              ?vision="${chatVisionAvailable(this.appState.dbInfo)}"
               @chat:prompt="${this._handlePrompt}"
               .appState="${this.appState}"
             ></grampsjs-chat-prompt>
@@ -301,14 +304,20 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
     setChatHistory(this.messages)
   }
 
+  // Only the thumbnails of attached images are kept in the conversation, as
+  // it is stored in the browser; the images are sent with this query only
   _handlePrompt(event) {
+    const images = event.detail.images ?? []
     const message = {
       role: 'human',
       message: event.detail.message,
     }
+    if (images.length > 0) {
+      message.images = images.map(image => image.thumbnail)
+    }
     this._addMessage(message, 7)
     setChatHistory(this.messages)
-    this._generateResponse()
+    this._generateResponse(images.map(image => image.data))
   }
 
   _pollChatTask(taskId, onProgress) {
@@ -339,17 +348,22 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
     })
   }
 
-  async _generateResponse() {
+  async _generateResponse(images = []) {
     this.loading = true
     const payload = {
       query: this.messages[this.messages.length - 1].message,
+    }
+    if (images.length > 0) {
+      payload.images = images
     }
     const rawHistory = getChatMessageHistoryRaw()
     if (rawHistory) {
       payload.message_history_raw = stripChatHistoryRaw(rawHistory)
     } else if (this.messages.length > 1) {
       // Fallback for sessions pre-dating message_history_raw; can be removed later.
-      payload.history = this.messages.slice(0, this.messages.length - 1)
+      payload.history = this.messages
+        .slice(0, this.messages.length - 1)
+        .map(({role, message}) => ({role, message}))
     }
     const data = await this.appState.apiPost(
       '/api/chat/?background=1&verbose=1',
