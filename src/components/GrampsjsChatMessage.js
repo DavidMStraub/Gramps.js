@@ -10,6 +10,7 @@ import {sharedStyles} from '../SharedStyles.js'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
 import {renderIconSvg} from '../icons.js'
 import './GrampsjsChatToolCalls.js'
+import './GrampsjsChatProposal.js'
 
 marked.use({breaks: true})
 
@@ -85,6 +86,10 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
 
         grampsjs-chat-tool-calls {
           padding-left: 35px;
+        }
+
+        grampsjs-chat-proposal {
+          align-self: stretch;
         }
 
         .container.human {
@@ -203,6 +208,9 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
       metadata: {type: Object},
       status: {type: String},
       live: {type: Boolean},
+      proposal: {type: Object},
+      proposalStatus: {type: String},
+      proposalDisabled: {type: Boolean},
     }
   }
 
@@ -213,6 +221,9 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
     this.metadata = null
     this.status = ''
     this.live = false
+    this.proposal = null
+    this.proposalStatus = ''
+    this.proposalDisabled = false
   }
 
   render() {
@@ -248,6 +259,14 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
                   ${renderMarkdown(this.message)}
                 </div>
               </div>
+              ${this.proposal
+                ? html`<grampsjs-chat-proposal
+                    .proposal="${this.proposal}"
+                    status="${this.proposalStatus}"
+                    ?disabled="${this.proposalDisabled}"
+                    .appState="${this.appState}"
+                  ></grampsjs-chat-proposal>`
+                : ''}
             `
           : html`
               <slot name="no-wrap"></slot>
