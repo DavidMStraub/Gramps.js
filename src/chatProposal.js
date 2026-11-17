@@ -471,6 +471,24 @@ export function proposalChanges(transaction) {
     .sort((a, b) => CHANGE_ORDER[a.type] - CHANGE_ORDER[b.type])
 }
 
+// What to tell the assistant about its proposals with the next prompt:
+// 'applied' if one was applied since it last answered, else 'not_applied' if
+// its last answer has a proposal, else ''
+export function previousProposalStatus(messages) {
+  if (messages.some(message => message.proposalUnreported)) return 'applied'
+  const answer = messages.findLast(message => message.role === 'ai')
+  return answer?.proposal ? 'not_applied' : ''
+}
+
+// The messages once the assistant has been told about applied proposals
+export function markProposalsReported(messages) {
+  return messages.map(message => {
+    if (!message.proposalUnreported) return message
+    const {proposalUnreported, ...reported} = message
+    return reported
+  })
+}
+
 // Handles of the records the changes refer to or change, by object class,
 // that are not added by the changes themselves and need to be fetched
 export function handlesToFetch(changes) {

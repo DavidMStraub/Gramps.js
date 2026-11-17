@@ -3,6 +3,8 @@ import {
   changeRows,
   formatDate,
   handlesToFetch,
+  markProposalsReported,
+  previousProposalStatus,
   proposalChanges,
 } from '../../src/chatProposal.js'
 
@@ -357,5 +359,64 @@ describe('formatDate', () => {
     ).toBe('Easter')
     expect(formatDate(emptyDate, translate)).toBe('')
     expect(formatDate(undefined, translate)).toBe('')
+  })
+})
+
+describe('previousProposalStatus', () => {
+  const proposal = {id: 'p', transaction: [{}]}
+  const question = {role: 'human', message: 'Who is he?'}
+  const failed = {role: 'error', message: 'An error occurred'}
+  const answer = (extra = {}) => ({role: 'ai', message: 'Done', ...extra})
+  const applied = answer({
+    proposal,
+    proposalStatus: 'applied',
+    proposalUnreported: true,
+  })
+
+  it('reports a proposal applied since the last answer', () => {
+    expect(previousProposalStatus([applied])).toBe('applied')
+    // applied after a later answer without a proposal
+    expect(previousProposalStatus([applied, question, answer()])).toBe(
+      'applied'
+    )
+    // applied after a later answer with a proposal, which is now outdated
+    const outdated = answer({proposal, proposalStatus: 'outdated'})
+    expect(previousProposalStatus([applied, question, outdated])).toBe(
+      'applied'
+    )
+  })
+
+  it('reports a proposal of the last answer that is not applied', () => {
+    for (const proposalStatus of [undefined, '', 'outdated']) {
+      expect(previousProposalStatus([answer({proposal, proposalStatus})])).toBe(
+        'not_applied'
+      )
+    }
+  })
+
+  it('reports again after a failed query', () => {
+    expect(previousProposalStatus([applied, question, failed])).toBe('applied')
+    expect(previousProposalStatus([answer({proposal}), question, failed])).toBe(
+      'not_applied'
+    )
+  })
+
+  it('is empty once reported, or without a proposal', () => {
+    const [reported] = markProposalsReported([applied])
+    expect(previousProposalStatus([reported, question, answer()])).toBe('')
+    expect(previousProposalStatus([answer()])).toBe('')
+    expect(previousProposalStatus([])).toBe('')
+  })
+})
+
+describe('markProposalsReported', () => {
+  it('drops the flag of applied proposals and keeps the rest', () => {
+    const other = {role: 'human', message: 'Hi'}
+    const [reported, kept] = markProposalsReported([
+      {role: 'ai', proposalStatus: 'applied', proposalUnreported: true},
+      other,
+    ])
+    expect(reported).toEqual({role: 'ai', proposalStatus: 'applied'})
+    expect(kept).toBe(other)
   })
 })
