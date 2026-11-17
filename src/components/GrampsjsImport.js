@@ -143,15 +143,30 @@ export class GrampsjsImport extends GrampsjsAppStateMixin(LitElement) {
           .appState="${this.appState}"
           .counts="${this._importResult}"
         ></grampsjs-import-counts>
-        ${this._renderNextSteps()}
+        ${this._renderMediaHint()} ${this._renderNextSteps()}
         <grampsjs-import-export-report
           .appState="${this.appState}"
           .messages="${this._importResult.messages}"
-          heading="${this._('Problems found during the import')}"
+          heading="${this._('Report')}"
+          filename="import-report.txt"
           collapsed
         ></grampsjs-import-export-report>
       </div>
     `
+  }
+
+  // A family tree file only refers to media files by path, so their files are
+  // uploaded in the media import below the tree import.
+  _renderMediaHint() {
+    if (!this._importResult?.media) {
+      return ''
+    }
+    return html`<p>
+      ${this._(
+        'Media files are imported separately, under %s.',
+        this._('Import Media Files')
+      )}
+    </p>`
   }
 
   // Without a home person, the family tree chart has no one to start from,

@@ -93,7 +93,8 @@ class GrampsjsImportPreviewDialog extends GrampsjsAppStateMixin(LitElement) {
           <grampsjs-import-export-report
             .appState="${this.appState}"
             .messages="${this.messages}"
-            heading="${this._('Problems found in this file')}"
+            heading="${this._('Report')}"
+            filename="import-report.txt"
             collapsed
           ></grampsjs-import-export-report>
         </form>

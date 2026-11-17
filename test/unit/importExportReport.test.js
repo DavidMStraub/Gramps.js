@@ -94,6 +94,54 @@ describe('grampsjs-import-export-report', () => {
     expect(el.shadowRoot.querySelector('.alert.warn')).not.toBeNull()
     expect(el.shadowRoot.querySelector('.card')).toBeNull()
   })
+
+  it('offers copying and downloading only with a filename', async () => {
+    const el = await mount('grampsjs-import-export-report', {messages: ['a']})
+    expect(el.shadowRoot.querySelector('#copy-button')).toBeNull()
+    expect(el.shadowRoot.querySelector('grampsjs-download-button')).toBeNull()
+  })
+
+  it('copies and downloads the report as the program wrote it', async () => {
+    const message = 'Could not import a.jpg               Line   144: 1 FILE'
+    const el = await mount('grampsjs-import-export-report', {
+      messages: [message, '', 'b'],
+      heading: 'Report',
+      filename: 'import-report.txt',
+      collapsed: true,
+    })
+    const writeText = vi.fn().mockResolvedValue()
+    vi.stubGlobal('navigator', {clipboard: {writeText}})
+    try {
+      await el._copy()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+    expect(writeText).toHaveBeenCalledWith(`${message}\nb\n`)
+
+    const download = el.shadowRoot.querySelector('grampsjs-download-button')
+    expect(download.filename).toBe('import-report.txt')
+    expect(download.mimeType).toBe('text/plain')
+    expect(download.content()).toBe(`${message}\nb\n`)
+  })
+
+  it('reports a failed copy', async () => {
+    const el = await mount('grampsjs-import-export-report', {
+      messages: ['a'],
+      filename: 'import-report.txt',
+    })
+    const errors = []
+    el.addEventListener('grampsjs:error', e => errors.push(e.detail.message))
+    vi.stubGlobal('navigator', {
+      clipboard: {writeText: vi.fn().mockRejectedValue(new Error('denied'))},
+    })
+    try {
+      await el._copy()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+    expect(errors).toEqual(['Failed to copy to clipboard'])
+    expect(el._copied).toBe(false)
+  })
 })
 
 describe('grampsjs-import-counts', () => {
@@ -608,6 +656,16 @@ describe('import: preview, confirmation and result', () => {
 
     expect(await run({})).toBe(true)
     expect(await run({homePerson: 'I0001'})).toBe(false)
+  })
+
+  it('points to the media import only after importing media objects', () => {
+    const {element} = makeImport({apiPost: vi.fn()})
+    element._importResult = {people: 2, media: 0}
+    expect(element._renderMediaHint()).toBe('')
+    element._importResult = {people: 2, media: 3}
+    expect(element._renderMediaHint().values).toEqual([
+      'Media files are imported separately, under Import Media Files.',
+    ])
   })
 
   it('treats a GEDZip file like a ZIP archive', () => {

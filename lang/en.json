@@ -431,8 +431,6 @@
   "The map could not be loaded.": "The map could not be loaded.",
   "Left out of the export": "Left out of the export",
   "The import has completed.": "The import has completed.",
-  "Problems found during the import": "Problems found during the import",
-  "Problems found in this file": "Problems found in this file",
   "Insert image": "Insert image",
   "Save as place": "Save as place",
   "Open saved place": "Open saved place",
@@ -518,5 +516,6 @@
   "Changes proposed by the assistant": "Changes proposed by the assistant",
   "Changes applied": "Changes applied",
   "These changes can no longer be applied.": "These changes can no longer be applied.",
-  "Attach images": "Attach images"
+  "Attach images": "Attach images",
+  "Media files are imported separately, under %s.": "Media files are imported separately, under %s."
 }
