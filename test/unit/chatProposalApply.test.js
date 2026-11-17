@@ -171,8 +171,43 @@ describe('applying a proposal', () => {
         message: 'One two three',
         proposal: proposal('a'),
         proposalStatus: 'applied',
+        proposalUnreported: true,
       },
     ])
+  })
+})
+
+describe('telling the assistant about its proposals', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  it('reports an apply once, also after a later answer', async () => {
+    vi.useFakeTimers()
+    const apiPost = vi.fn(url =>
+      Promise.resolve(
+        url.startsWith('/api/transactions/')
+          ? {data: transaction}
+          : {data: {response: 'Yes'}}
+      )
+    )
+    const chat = document.createElement('grampsjs-chat')
+    chat.appState = {apiPost}
+    chat.messages = [
+      {role: 'ai', message: 'First', proposal: proposal('a')},
+      {role: 'human', message: 'Who is she?'},
+      {role: 'ai', message: 'Jane'},
+    ]
+    const ask = async message => {
+      chat._handlePrompt({detail: {message}})
+      await vi.runAllTimersAsync()
+      return apiPost.mock.lastCall[1]
+    }
+
+    await chat._applyProposal(chat.messages[0].proposal)
+    expect((await ask('Did I apply it?')).previous_proposal).toBe('applied')
+    expect((await ask('And now?')).previous_proposal).toBeUndefined()
   })
 })
 

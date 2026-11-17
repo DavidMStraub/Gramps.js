@@ -1,6 +1,6 @@
 import {html, css, LitElement} from 'lit'
 import '@material/web/button/filled-button.js'
-import {mdiNotificationClearAll} from '@mdi/js'
+import {mdiChatPlusOutline} from '@mdi/js'
 
 import {sharedStyles} from '../SharedStyles.js'
 import {GrampsjsAppStateMixin} from '../mixins/GrampsjsAppStateMixin.js'
@@ -17,6 +17,7 @@ import {
 } from '../api.js'
 import {stripChatHistoryRaw} from '../chatHistory.js'
 import {chatVisionAvailable} from '../chatImages.js'
+import {markProposalsReported, previousProposalStatus} from '../chatProposal.js'
 import {fireEvent, makeHandle} from '../util.js'
 
 function delay(ms) {
@@ -103,9 +104,8 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
         }
 
         .clear-btn {
-          position: relative;
-          top: 20px;
-          left: 0px;
+          padding: 20px 0 8px 0;
+          flex-shrink: 0;
         }
       `,
     ]
@@ -149,7 +149,7 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
           >
             <grampsjs-icon
               slot="icon"
-              path="${mdiNotificationClearAll}"
+              path="${mdiChatPlusOutline}"
               color="currentColor"
             ></grampsjs-icon>
             ${this._('New')}
@@ -238,11 +238,12 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
 
   // The AI message of a chat result, keeping the history of the conversation
   // for the next query
-  // eslint-disable-next-line class-methods-use-this
   _aiMessage(result) {
     if (result.message_history_raw) {
       setChatMessageHistoryRaw(result.message_history_raw)
     }
+    // the query that got this answer told the assistant about them
+    this.messages = markProposalsReported(this.messages)
     const message = {
       role: 'ai',
       message: result.response,
@@ -295,7 +296,9 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
     this.messages = this.messages.map(message => {
       if (!message.proposal || message.proposalStatus) return message
       if (message.proposal.id === id) {
-        return {...message, proposalStatus: status}
+        return status === 'applied'
+          ? {...message, proposalStatus: status, proposalUnreported: true}
+          : {...message, proposalStatus: status}
       }
       return status === 'applied'
         ? {...message, proposalStatus: 'outdated'}
@@ -315,9 +318,14 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
     if (images.length > 0) {
       message.images = images.map(image => image.thumbnail)
     }
+    // before the prompt is added, which can drop the oldest message
+    const previousProposal = previousProposalStatus(this.messages)
     this._addMessage(message, 7)
     setChatHistory(this.messages)
-    this._generateResponse(images.map(image => image.data))
+    this._generateResponse(
+      images.map(image => image.data),
+      previousProposal
+    )
   }
 
   _pollChatTask(taskId, onProgress) {
@@ -348,7 +356,9 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
     })
   }
 
-  async _generateResponse(images = []) {
+  // `previousProposal` is what to tell the assistant about its proposals, see
+  // previousProposalStatus
+  async _generateResponse(images = [], previousProposal = '') {
     this.loading = true
     const payload = {
       query: this.messages[this.messages.length - 1].message,
@@ -364,6 +374,10 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
       payload.history = this.messages
         .slice(0, this.messages.length - 1)
         .map(({role, message}) => ({role, message}))
+    }
+    // the model doesn't see its proposals in the stripped history
+    if (previousProposal) {
+      payload.previous_proposal = previousProposal
     }
     const data = await this.appState.apiPost(
       '/api/chat/?background=1&verbose=1',
