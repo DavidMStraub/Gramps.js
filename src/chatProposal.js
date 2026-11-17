@@ -517,15 +517,35 @@ const CALENDAR_STRINGS = {
   6: 'Swedish',
 }
 
+const NEW_YEAR_STRINGS = {1: 'Mar1', 2: 'Mar25', 3: 'Sep1'}
+
 const pad = (number, length) => `${number}`.padStart(length, '0')
 
+// A year as Gramps shows it, a dual year as 1731/2 for the stored 1732
+function formatYear(year, dual) {
+  const value = Math.abs(year)
+  if (!dual) return `${value}`
+  const previous = value - 1
+  let modulus = 10
+  if (previous % 100 === 99) modulus = 1000
+  else if (previous % 10 === 9) modulus = 100
+  return `${previous}/${value % modulus}`
+}
+
 // One half of a dateval as year-month-day, leaving out what is not known
-function formatDateval(day, month, year) {
+function formatDateval(day, month, year, dual) {
   if (!year && !month && !day) return ''
-  const parts = [year ? pad(year, 4) : '????']
+  const parts = [year ? formatYear(year, dual) : '????']
   if (month) parts.push(pad(month, 2))
   if (month && day) parts.push(pad(day, 2))
-  return parts.join('-')
+  const value = parts.join('-')
+  return year < 0 ? `${value} B.C.E.` : value
+}
+
+// The new year a date counts from, if not the first of January
+function formatNewYear(newyear) {
+  if (Array.isArray(newyear)) return newyear.join('-')
+  return NEW_YEAR_STRINGS[newyear] ?? ''
 }
 
 // A Gramps date as text, with `translate` for its words and
@@ -540,8 +560,8 @@ export function formatDate(
   if (date.modifier === MOD_TEXTONLY) return date.text ?? ''
   if (dateIsEmpty(date)) return ''
   const dv = date.dateval ?? []
-  const first = formatDateval(dv[0], dv[1], dv[2])
-  const second = formatDateval(dv[4], dv[5], dv[6])
+  const first = formatDateval(dv[0], dv[1], dv[2], dv[3])
+  const second = formatDateval(dv[4], dv[5], dv[6], dv[7])
   let result
   switch (date.modifier) {
     case MOD_BEFORE:
@@ -570,7 +590,12 @@ export function formatDate(
   }
   const quality = QUALITY_STRINGS[date.quality]
   if (quality) result = `${translate(quality)} ${result}`
-  const calendar = CALENDAR_STRINGS[date.calendar]
-  if (calendar) result = `${result} (${translateContext('calendar', calendar)})`
+  const extras = [
+    CALENDAR_STRINGS[date.calendar]
+      ? translateContext('calendar', CALENDAR_STRINGS[date.calendar])
+      : '',
+    formatNewYear(date.newyear),
+  ].filter(Boolean)
+  if (extras.length > 0) result = `${result} (${extras.join(', ')})`
   return result
 }

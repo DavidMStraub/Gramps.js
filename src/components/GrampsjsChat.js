@@ -181,7 +181,7 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
                     .metadata="${message.metadata ?? null}"
                     .proposal="${message.proposal ?? null}"
                     proposalStatus="${message.proposalStatus ?? ''}"
-                    ?proposalApplying="${!!this._applyingProposal}"
+                    ?proposalDisabled="${this._busy}"
                     @chat-proposal:apply="${() =>
                       this._applyProposal(message.proposal)}"
                     .appState="${this.appState}"
@@ -191,7 +191,7 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
           </div>
           <div class="prompt">
             <grampsjs-chat-prompt
-              ?loading="${this.loading}"
+              ?loading="${this._busy}"
               @chat:prompt="${this._handlePrompt}"
               .appState="${this.appState}"
             ></grampsjs-chat-prompt>
@@ -251,8 +251,15 @@ class GrampsjsChat extends GrampsjsAppStateMixin(LitElement) {
     return message
   }
 
+  // Whether the assistant answers or a proposal is being applied. Neither may
+  // start while the other runs, as the answer could hold a proposal made for
+  // the tree as it was before the changes.
+  get _busy() {
+    return this.loading || !!this._applyingProposal
+  }
+
   async _applyProposal(proposal) {
-    if (!proposal || this._applyingProposal) return
+    if (!proposal || this._busy) return
     this._applyingProposal = proposal.id
     const result = await this.appState.apiPost(
       `/api/transactions/?message=${encodeURIComponent(

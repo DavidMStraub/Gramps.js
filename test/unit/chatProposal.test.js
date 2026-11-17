@@ -325,6 +325,29 @@ describe('formatDate', () => {
     ).toBe('<estimated> 1850 (<calendar:Julian>)')
   })
 
+  it('formats dual and negative years as Gramps does', () => {
+    expect(formatDate(date([0, 2, 1732, true]), translate)).toBe('1731/2-02')
+    expect(formatDate(date([0, 0, 1710, true]), translate)).toBe('1709/10')
+    expect(formatDate(date([0, 0, 1800, true]), translate)).toBe('1799/800')
+    expect(formatDate(date([15, 3, -44, false]), translate)).toBe(
+      '44-03-15 B.C.E.'
+    )
+    expect(formatDate(date([0, 0, 44, false]), translate)).toBe('44')
+  })
+
+  it('shows the new year a date counts from', () => {
+    expect(formatDate(date([0, 2, 1732, false], {newyear: 2}), translate)).toBe(
+      '1732-02 (Mar25)'
+    )
+    expect(
+      formatDate(
+        date([0, 2, 1732, false], {newyear: [4, 1], calendar: 1}),
+        translate,
+        translateContext
+      )
+    ).toBe('1732-02 (<calendar:Julian>, 4-1)')
+  })
+
   it('shows the text of a text-only date and nothing for an empty one', () => {
     expect(
       formatDate(

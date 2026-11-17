@@ -124,6 +124,35 @@ describe('applying a proposal', () => {
     expect(statuses(chat)).toEqual(['applied', 'outdated', 'applied', ''])
   })
 
+  it('applies nothing while the assistant answers', async () => {
+    const apiPost = vi.fn()
+    const chat = makeChat(apiPost)
+    chat.loading = true
+    await chat._applyProposal(chat.messages[0].proposal)
+    expect(apiPost).not.toHaveBeenCalled()
+    expect(statuses(chat)).toEqual(['', '', 'applied', ''])
+  })
+
+  it('is busy while the assistant answers or a proposal is applied', async () => {
+    let resolvePost
+    const apiPost = vi.fn(
+      () =>
+        new Promise(resolve => {
+          resolvePost = resolve
+        })
+    )
+    const chat = makeChat(apiPost)
+    expect(chat._busy).toBe(false)
+    chat.loading = true
+    expect(chat._busy).toBe(true)
+    chat.loading = false
+    const applying = chat._applyProposal(chat.messages[0].proposal)
+    expect(chat._busy).toBe(true)
+    resolvePost({data: transaction})
+    await applying
+    expect(chat._busy).toBe(false)
+  })
+
   it('keeps a status set while the answer is still shown word by word', async () => {
     vi.useFakeTimers()
     const chat = document.createElement('grampsjs-chat')

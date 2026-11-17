@@ -210,7 +210,7 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
       live: {type: Boolean},
       proposal: {type: Object},
       proposalStatus: {type: String},
-      proposalApplying: {type: Boolean},
+      proposalDisabled: {type: Boolean},
     }
   }
 
@@ -223,7 +223,7 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
     this.live = false
     this.proposal = null
     this.proposalStatus = ''
-    this.proposalApplying = false
+    this.proposalDisabled = false
   }
 
   render() {
@@ -263,7 +263,7 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
                 ? html`<grampsjs-chat-proposal
                     .proposal="${this.proposal}"
                     status="${this.proposalStatus}"
-                    ?applying="${this.proposalApplying}"
+                    ?disabled="${this.proposalDisabled}"
                     .appState="${this.appState}"
                   ></grampsjs-chat-proposal>`
                 : ''}

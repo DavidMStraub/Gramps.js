@@ -166,7 +166,7 @@ class GrampsjsChatProposal extends GrampsjsAppStateMixin(LitElement) {
     return {
       proposal: {type: Object},
       status: {type: String},
-      applying: {type: Boolean},
+      disabled: {type: Boolean},
       _objects: {type: Object},
     }
   }
@@ -175,7 +175,7 @@ class GrampsjsChatProposal extends GrampsjsAppStateMixin(LitElement) {
     super()
     this.proposal = null
     this.status = ''
-    this.applying = false
+    this.disabled = false
     // records the proposal refers to, fetched by handle
     this._objects = {}
     this._requested = new Set()
@@ -369,7 +369,7 @@ class GrampsjsChatProposal extends GrampsjsAppStateMixin(LitElement) {
     return html`
       <div class="footer">
         <md-filled-button
-          ?disabled="${this.applying}"
+          ?disabled="${this.disabled}"
           @click="${this._handleApply}"
           >${this._('Apply')}</md-filled-button
         >
