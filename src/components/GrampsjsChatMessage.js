@@ -186,6 +186,26 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
           font-weight: 600;
         }
 
+        .human-content {
+          flex-grow: 1;
+          min-width: 0;
+        }
+
+        .images {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .images img {
+          height: 120px;
+          max-width: 100%;
+          object-fit: contain;
+          border-radius: 8px;
+          display: block;
+        }
+
         .avatar {
           width: 35px;
           height: 35px;
@@ -205,6 +225,8 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
     return {
       type: {type: String},
       message: {type: String},
+      // thumbnails of the images attached to a question
+      images: {type: Array},
       metadata: {type: Object},
       status: {type: String},
       live: {type: Boolean},
@@ -218,6 +240,7 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
     super()
     this.type = 'human'
     this.message = ''
+    this.images = []
     this.metadata = null
     this.status = ''
     this.live = false
@@ -270,10 +293,22 @@ class GrampsjsChatMessage extends GrampsjsAppStateMixin(LitElement) {
             `
           : html`
               <slot name="no-wrap"></slot>
-              <div class="slot-wrap">${this.message}</div>
+              <div class="human-content">
+                ${this._renderImages()}
+                <div class="slot-wrap">${this.message}</div>
+              </div>
             `}
       </div>
     `
+  }
+
+  _renderImages() {
+    if (!this.images?.length) return ''
+    return html`<div class="images">
+      ${this.images.map(
+        src => html`<img src="${src}" alt="${this._('Image')}" />`
+      )}
+    </div>`
   }
 }
 

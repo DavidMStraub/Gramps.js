@@ -245,6 +245,7 @@ export const grampsStrings = [
   'Confirmation',
   'Connector',
   'Content',
+  'Could not open file: %s',
   'Count',
   'Country',
   "CSV is a common spreadsheet format.\nYou can change this behavior in the 'Configure active view' of any list-based view",
