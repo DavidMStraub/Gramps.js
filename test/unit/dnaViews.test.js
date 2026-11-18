@@ -376,7 +376,15 @@ describe('GrampsjsFormEditMatch', () => {
   }
 
   // A form for the match, with a person and notes served by the API
-  const editForm = ({associationPrivate = false, notePrivate = false} = {}) => {
+  // `noteGet` and `notePut` replace the responses for the note
+  const editForm = ({
+    associationPrivate = false,
+    notePrivate = false,
+    noteGet = async () => ({
+      data: {handle: 'n1', private: notePrivate, text: {}},
+    }),
+    notePut = {data: []},
+  } = {}) => {
     const association = {
       ref: 'm1',
       rel: 'DNA',
@@ -384,12 +392,14 @@ describe('GrampsjsFormEditMatch', () => {
       ...(associationPrivate && {private: true}),
     }
     const form = new GrampsjsFormEditMatch()
-    const apiPut = vi.fn().mockResolvedValue({data: []})
+    const apiPut = vi.fn(async url =>
+      url.startsWith('/api/notes/') ? notePut : {data: []}
+    )
     form.appState = {
       i18n: {strings: {}},
       apiGet: vi.fn(async url =>
         url.startsWith('/api/notes/')
-          ? {data: {handle: 'n1', private: notePrivate, text: {}}}
+          ? noteGet()
           : {data: {handle: 'p1', person_ref_list: [association]}}
       ),
       apiPut,
@@ -445,6 +455,63 @@ describe('GrampsjsFormEditMatch', () => {
       {dbChanged: false},
     ])
     expect(events).toEqual(['off', 'changed'])
+  })
+
+  it('keeps a private note private when saved before its lookup', async () => {
+    let resolveLookup
+    const {form, apiPut} = editForm({
+      noteGet: vi
+        .fn()
+        .mockImplementationOnce(
+          () =>
+            new Promise(resolve => {
+              resolveLookup = resolve
+            })
+        )
+        .mockResolvedValue({data: {handle: 'n1', private: true, text: {}}}),
+    })
+    const loading = form._loadNotePrivacy()
+    await form._save()
+    resolveLookup({data: {handle: 'n1', private: true}})
+    await loading
+    const bodies = puts(apiPut)
+    expect(bodies['/api/notes/n1'].private).toBe(true)
+    expect(bodies['/api/people/p1'].person_ref_list[0].private).toBe(true)
+  })
+
+  it('keeps a private note private after its lookup failed', async () => {
+    const {form, apiPut} = editForm({
+      noteGet: vi
+        .fn()
+        .mockResolvedValueOnce({error: 'Network error'})
+        .mockResolvedValue({data: {handle: 'n1', private: true, text: {}}}),
+    })
+    await form._loadNotePrivacy()
+    await form._save()
+    expect(puts(apiPut)['/api/notes/n1'].private).toBe(true)
+  })
+
+  it('writes nothing when a note cannot be read', async () => {
+    const {form, apiPut} = editForm({
+      noteGet: async () => ({error: 'Not found'}),
+    })
+    const errors = vi.fn()
+    form.addEventListener('grampsjs:error', errors)
+    expect(await form._save()).toBe(false)
+    expect(apiPut).not.toHaveBeenCalled()
+    expect(errors).toHaveBeenCalled()
+  })
+
+  it('keeps the association public when a note cannot be made private', async () => {
+    const {form, apiPut} = editForm({notePut: {error: 'Server error'}})
+    form._handleFormData(formDataEvent('private', {checked: true}))
+    const events = []
+    form.addEventListener('grampsjs:error', () => events.push('error'))
+    form.addEventListener('edit-mode:off', () => events.push('off'))
+    form.addEventListener('db:changed', () => events.push('changed'))
+    await form._handleSaveButton()
+    expect(apiPut.mock.calls.map(([url]) => url)).toEqual(['/api/notes/n1'])
+    expect(events).toEqual(['error', 'off'])
   })
 })
 

@@ -54,10 +54,6 @@ export class GrampsjsFormEditMatch extends GrampsjsEditMatchMixin(
     return this._private ?? (!!this.association?.private || this._notePrivate)
   }
 
-  get _segmentNoteHandles() {
-    return matchSegmentNoteHandles(this.association, this.data)
-  }
-
   render() {
     return html`
       <div @formdata:changed="${this._handleFormData}">
@@ -80,7 +76,7 @@ export class GrampsjsFormEditMatch extends GrampsjsEditMatchMixin(
 
   async _loadNotePrivacy() {
     const notes = await Promise.all(
-      this._segmentNoteHandles.map(handle =>
+      matchSegmentNoteHandles(this.association, this.data).map(handle =>
         this.appState.apiGet(`/api/notes/${handle}`)
       )
     )
@@ -107,90 +103,83 @@ export class GrampsjsFormEditMatch extends GrampsjsEditMatchMixin(
     }
   }
 
-  // Saves the raw data and the privacy, and returns whether anything changed
+  // Saves the raw data and the privacy, and returns whether anything changed.
+  // The privacy follows the switch, or else the saved association and notes,
+  // which are read before anything is written. The notes are written before
+  // the association and the save stops at the first error, so a failed save
+  // never hides the match while a note with its segments stays public.
   async _save() {
-    const isPrivate = this._isPrivate
-    const notesChanged = await this._saveNotes(isPrivate)
-    const associationChanged = await this._saveAssociationPrivacy(isPrivate)
-    return notesChanged || associationChanged
-  }
+    const match = this.data
+    const noteText = match.raw_data?.[0]
+    const textHandle = noteText ? match.note_handles?.[0] : undefined
 
-  // The raw data field edits the first note with segments, and the privacy
-  // applies to the notes with segments that are attached to the association
-  async _saveNotes(isPrivate) {
-    const noteText = this.data.raw_data?.[0]
-    const textHandle = noteText ? this.data.note_handles?.[0] : undefined
-    const privacyHandles = this._segmentNoteHandles
+    const person = await this._fetchWritable(`/api/people/${this.personHandle}`)
+    if (person === null) return false
+    const association = matchAssociation(person, match)
+    const privacyHandles = matchSegmentNoteHandles(association, match)
     const handles = [...new Set([textHandle, ...privacyHandles])].filter(
       Boolean
     )
-    let changed = false
-    for (const handle of handles) {
-      // eslint-disable-next-line no-await-in-loop
-      const noteChanged = await this._saveNote(handle, {
-        text: handle === textHandle ? noteText : null,
-        isPrivate: privacyHandles.includes(handle) ? isPrivate : null,
-      })
-      changed = changed || noteChanged
-    }
-    return changed
-  }
-
-  // Saves the note with `text` and `isPrivate`, either of which is null to
-  // keep it unchanged, and returns whether it was saved
-  async _saveNote(handle, {text, isPrivate}) {
-    const noteData = await this.appState.apiGet(`/api/notes/${handle}`)
-    if ('error' in noteData) {
-      fireEvent(this, 'grampsjs:error', {message: noteData.error})
-      return false
-    }
-    const note = toWritableObject(noteData.data)
-    const textChanged = text !== null
-    const privacyChanged = isPrivate !== null && !!note.private !== isPrivate
-    if (!textChanged && !privacyChanged) return false
-    const data = await this.appState.apiPut(
-      `/api/notes/${handle}`,
-      {
-        ...note,
-        ...(textChanged && {
-          text: {_class: 'StyledText', string: text, tags: []},
-        }),
-        ...(privacyChanged && {private: isPrivate}),
-      },
-      {dbChanged: false}
+    const notes = await Promise.all(
+      handles.map(handle => this._fetchWritable(`/api/notes/${handle}`))
     )
-    if ('error' in data) {
-      fireEvent(this, 'grampsjs:error', {message: data.error})
-      return false
-    }
-    return true
-  }
+    if (notes.includes(null)) return false
 
-  // Saves the privacy of the association, and returns whether it changed
-  async _saveAssociationPrivacy(isPrivate) {
-    if (!this.personHandle) return false
-    const url = `/api/people/${this.personHandle}`
-    const personData = await this.appState.apiGet(url)
-    if ('error' in personData) {
-      fireEvent(this, 'grampsjs:error', {message: personData.error})
-      return false
+    const isPrivate =
+      this._private ??
+      (!!association?.private ||
+        notes.some(
+          (note, i) => privacyHandles.includes(handles[i]) && note.private
+        ))
+
+    let changed = false
+    for (const [i, handle] of handles.entries()) {
+      const note = notes[i]
+      const textChanged = handle === textHandle
+      const privacyChanged =
+        privacyHandles.includes(handle) && !!note.private !== isPrivate
+      if (textChanged || privacyChanged) {
+        // eslint-disable-next-line no-await-in-loop
+        const saved = await this._put(`/api/notes/${handle}`, {
+          ...note,
+          ...(textChanged && {
+            text: {_class: 'StyledText', string: noteText, tags: []},
+          }),
+          ...(privacyChanged && {private: isPrivate}),
+        })
+        if (!saved) return changed
+        changed = true
+      }
     }
-    const person = toWritableObject(personData.data)
-    const association = matchAssociation(person, this.data)
-    if (association === null || !!association.private === isPrivate) {
-      return false
-    }
-    const index = this.data.person_ref_idx
-    const data = await this.appState.apiPut(
-      url,
-      {
+
+    if (association !== null && !!association.private !== isPrivate) {
+      const index = match.person_ref_idx
+      const saved = await this._put(`/api/people/${this.personHandle}`, {
         ...person,
         person_ref_list: person.person_ref_list.map((ref, i) =>
           i === index ? {...ref, private: isPrivate} : ref
         ),
-      },
-      {dbChanged: false}
-    )
+      })
+      changed = changed || saved
+    }
+    return changed
+  }
+
+  // The object at `url` without its read-only parts, or null after reporting
+  // an error
+  async _fetchWritable(url) {
+    const data = await this.appState.apiGet(url)
+    if ('error' in data) {
+      fireEvent(this, 'grampsjs:error', {message: data.error})
+      return null
+    }
+    return toWritableObject(data.data)
+  }
+
+  // Writes `object` to `url` without announcing the change, and returns
+  // whether it was saved
+  async _put(url, object) {
+    const data = await this.appState.apiPut(url, object, {dbChanged: false})
     if ('error' in data) {
       fireEvent(this, 'grampsjs:error', {message: data.error})
       return false
