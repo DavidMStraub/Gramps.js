@@ -175,7 +175,12 @@ export class GrampsjsViewYDna extends GrampsjsViewDnaBase {
   }
 
   _renderNoData() {
-    return html`<div>${this._('No Y-DNA data found.')}</div>`
+    return html`<div>
+      ${this._('No Y-DNA data found.')}
+      ${this.grampsId && this._data.length
+        ? this._('Please select a different person.')
+        : ''}
+    </div>`
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -190,7 +195,10 @@ export class GrampsjsViewYDna extends GrampsjsViewDnaBase {
       >`
     }
     return html`
-      <md-filled-select @change="${this._handleSelectChange}">
+      <md-filled-select
+        label="${this._selectLabel}"
+        @change="${this._handleSelectChange}"
+      >
         ${this._data.map(
           person => html`
             <md-select-option
