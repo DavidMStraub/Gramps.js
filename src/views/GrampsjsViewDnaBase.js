@@ -229,6 +229,14 @@ export class GrampsjsViewDnaBase extends GrampsjsStaleDataMixin(GrampsjsView) {
     return this._data.some(person => person.gramps_id === this.grampsId)
   }
 
+  // The select asks for a person when the person in the URL has no data on
+  // this page, as after switching tabs, so it does not show up empty
+  get _selectLabel() {
+    return this._data.length && !this._selectDataHasGrampsId()
+      ? this._('Select')
+      : ''
+  }
+
   handleUpdateStaleData() {
     this._fetchAllData()
   }

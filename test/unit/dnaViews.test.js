@@ -8,6 +8,7 @@ import {
   GrampsjsYtreeLineage,
   biologicalFatherHandle,
 } from '../../src/components/GrampsjsYtreeLineage.js'
+import {YtreeLineageChart} from '../../src/charts/YtreeLineageChart.js'
 import {GrampsjsDnaMatchTable} from '../../src/components/GrampsjsDnaMatchTable.js'
 import {GrampsjsViewDnaMatches} from '../../src/views/GrampsjsViewDnaMatches.js'
 import {GrampsjsDnaMatches} from '../../src/components/GrampsjsDnaMatches.js'
@@ -161,6 +162,26 @@ describe('GrampsjsYtreeLineage', () => {
     ])
   })
 
+  it('links only the clade boxes to YFull', () => {
+    const element = lineage([clade('A', 1000), clade('R-Y13610', 1000, 650)], {
+      handle: 'son',
+    })
+    const chart = element.getChartData()
+    expect(chart.map(box => box.url)).toEqual([
+      'https://yfull.com/tree/A',
+      'https://yfull.com/tree/R-Y13610',
+      undefined, // the MRCA of the clade above
+      undefined, // the person
+    ])
+    const links = YtreeLineageChart(chart).querySelectorAll('a')
+    expect(links).toHaveLength(2)
+    expect(links[1].getAttribute('href')).toBe(
+      'https://yfull.com/tree/R-Y13610'
+    )
+    expect(links[1].getAttribute('target')).toBe('_blank')
+    expect(links[1].getAttribute('aria-label')).toBe('YFull: R-Y13610')
+  })
+
   it('offers the expand button whenever clades are hidden', () => {
     const element = lineage([
       clade('A', 3000),
@@ -298,6 +319,38 @@ describe('GrampsjsViewDnaMatches', () => {
     expect(view._shouldLoadDnaData()).toBe(false)
     view._dnaData = {grampsId: 'I0', data: []}
     expect(view._shouldLoadDnaData()).toBe(true)
+  })
+})
+
+describe('GrampsjsViewYDna', () => {
+  // A view whose select lists people with Y-DNA data
+  const view = grampsId => {
+    const element = new GrampsjsViewYDna()
+    element.appState = {i18n: {strings: {}}}
+    element._data = [{handle: 'p1', gramps_id: 'I1'}]
+    element.grampsId = grampsId
+    return element
+  }
+
+  it('asks for a person who has data when the URL names another', () => {
+    const element = view('I2')
+    expect(element._selectLabel).toBe('Select')
+    const root = document.createElement('div')
+    render(element._renderNoData(), root)
+    expect(root.textContent).toContain('Please select a different person.')
+  })
+
+  it('shows no select label for a person who has data', () => {
+    expect(view('I1')._selectLabel).toBe('')
+  })
+
+  it('only says there is no data when nobody has any', () => {
+    const element = view('I2')
+    element._data = []
+    expect(element._selectLabel).toBe('')
+    const root = document.createElement('div')
+    render(element._renderNoData(), root)
+    expect(root.textContent).not.toContain('Please select')
   })
 })
 

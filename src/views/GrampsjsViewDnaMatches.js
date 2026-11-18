@@ -120,6 +120,7 @@ export class GrampsjsViewDnaMatches extends GrampsjsViewDnaBase {
       <div class="select-row">
         <md-filled-select
           aria-label="${this._('DNA Match')}"
+          label="${this._selectLabel}"
           @change="${this._handleSelectChange}"
         >
           ${this._data.map(
