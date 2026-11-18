@@ -128,8 +128,12 @@ export class GrampsjsViewDnaBase extends GrampsjsStaleDataMixin(GrampsjsView) {
     }
   }
 
+  get selectedPerson() {
+    return this._data.find(person => person.gramps_id === this.grampsId)
+  }
+
   get selectedHandle() {
-    return this._data.find(person => person.gramps_id === this.grampsId)?.handle
+    return this.selectedPerson?.handle
   }
 
   async _fetchDnaData(clear = false) {
