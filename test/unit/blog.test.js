@@ -7,6 +7,7 @@ import {
   todayIsoDate,
 } from '../../src/blog.js'
 import {GrampsjsViewBlog} from '../../src/views/GrampsjsViewBlog.js'
+import {GrampsjsViewRecentBlogPosts} from '../../src/views/GrampsjsViewRecentBlogPosts.js'
 
 const dateAttr = value => ({_class: 'SrcAttribute', type: 'Date', value})
 
@@ -98,6 +99,52 @@ describe('sortBlogPosts', () => {
     expect(sortBlogPosts(posts).map(p => p.handle)).toEqual(['b', 'a'])
   })
 
+  it('sorts by the calendar day shown in the local time zone', () => {
+    const tz = process.env.TZ
+    process.env.TZ = 'America/Los_Angeles'
+    try {
+      // 07:00 UTC on 22 November is 21 November in Los Angeles
+      const legacy = {
+        handle: 'legacy',
+        change: Date.UTC(2026, 10, 22, 7) / 1000,
+      }
+      const dated = {
+        handle: 'dated',
+        change: 1,
+        attribute_list: [dateAttr('2026-11-22')],
+      }
+      expect(formatBlogPostDate(legacy, 'en')).toBe('November 21, 2026')
+      expect(sortBlogPosts([legacy, dated]).map(p => p.handle)).toEqual([
+        'dated',
+        'legacy',
+      ])
+    } finally {
+      process.env.TZ = tz
+    }
+  })
+
+  it('orders a legacy post and a dated post on the same day by last change', () => {
+    const tz = process.env.TZ
+    process.env.TZ = 'UTC'
+    try {
+      const legacy = {
+        handle: 'legacy',
+        change: Date.UTC(2026, 10, 22, 7) / 1000,
+      }
+      const dated = {
+        handle: 'dated',
+        change: Date.UTC(2026, 10, 22, 8) / 1000,
+        attribute_list: [dateAttr('2026-11-22')],
+      }
+      expect(sortBlogPosts([legacy, dated]).map(p => p.handle)).toEqual([
+        'dated',
+        'legacy',
+      ])
+    } finally {
+      process.env.TZ = tz
+    }
+  })
+
   it('does not modify its input', () => {
     const posts = [
       {handle: 'a', change: 1},
@@ -122,13 +169,13 @@ describe('grampsIdRules', () => {
 
 describe('blog view: fetching', () => {
   const posts = [
-    {handle: 'h1', gramps_id: 'S1', change: 300},
-    {handle: 'h2', gramps_id: 'S2', change: 100},
+    {handle: 'h1', gramps_id: 'S1', change: Date.UTC(2026, 0, 20) / 1000},
+    {handle: 'h2', gramps_id: 'S2', change: Date.UTC(2026, 0, 10) / 1000},
     {
       handle: 'h3',
       gramps_id: 'S3',
-      change: 200,
-      attribute_list: [dateAttr('1970-01-01')],
+      change: Date.UTC(2026, 0, 30) / 1000,
+      attribute_list: [dateAttr('2026-01-01')],
     },
   ]
 
@@ -199,5 +246,64 @@ describe('blog view: fetching', () => {
     expect(view.error).toBe(true)
     expect(view._errorMessage).toBe('Nope')
     expect(view.loading).toBe(false)
+  })
+})
+
+describe('latest blog post widget: fetching', () => {
+  const makeWidget = responses => {
+    const widget = new GrampsjsViewRecentBlogPosts()
+    const apiGet = vi.fn(url =>
+      Promise.resolve(
+        url.startsWith('/api/sources/?') ? responses.list : responses.post
+      )
+    )
+    widget.appState = {apiGet, i18n: {lang: 'en'}}
+    return widget
+  }
+
+  it('fetches the media of the latest post only', async () => {
+    const widget = makeWidget({
+      list: {
+        data: [
+          {handle: 'old', change: 100},
+          {handle: 'new', change: 1, attribute_list: [dateAttr('2026-01-01')]},
+        ],
+      },
+      post: {data: {handle: 'new', gramps_id: 'S2', title: 'New'}},
+    })
+
+    await widget._updateGetData(widget.getUrl())
+
+    const [[listUrl], [postUrl]] = widget.appState.apiGet.mock.calls
+    expect(listUrl).not.toContain('extend')
+    expect(postUrl).toMatch(/^\/api\/sources\/new\?extend=media_list&/)
+    expect(widget._data.data).toEqual([
+      {handle: 'new', gramps_id: 'S2', title: 'New'},
+    ])
+    expect(widget.error).toBe(false)
+  })
+
+  it('has no data and makes one request when there are no posts', async () => {
+    const widget = makeWidget({list: {data: []}})
+
+    await widget._updateGetData(widget.getUrl())
+
+    expect(widget.appState.apiGet).toHaveBeenCalledOnce()
+    expect(widget._data.data).toEqual([])
+  })
+
+  it('reports an error from either request', async () => {
+    const listError = makeWidget({list: {error: 'Nope'}})
+    await listError._updateGetData(listError.getUrl())
+    expect(listError.error).toBe(true)
+    expect(listError._errorMessage).toBe('Nope')
+
+    const postError = makeWidget({
+      list: {data: [{handle: 'a', change: 1}]},
+      post: {error: 'Gone'},
+    })
+    await postError._updateGetData(postError.getUrl())
+    expect(postError.error).toBe(true)
+    expect(postError._errorMessage).toBe('Gone')
   })
 })

@@ -29,7 +29,7 @@ export class GrampsjsViewRecentBlogPosts extends GrampsjsConnectedComponent {
         <p>${this._('None')}.</p>
       `
     }
-    const [latest] = sortBlogPosts(this._data.data)
+    const [latest] = this._data.data
     return html`
       <h3>${this._('Latest Blog Post')}</h3>
       <grampsjs-search-result-list
@@ -63,11 +63,46 @@ export class GrampsjsViewRecentBlogPosts extends GrampsjsConnectedComponent {
     `
   }
 
-  // the API can't sort by the date attribute, so this fetches all posts
   getUrl() {
     return `/api/sources/?rules=${encodeURIComponent(
       JSON.stringify(blogRules)
-    )}&extend=media_list&keys=handle,gramps_id,title,attribute_list,change,media_list,extended`
+    )}&keys=handle,attribute_list,change`
+  }
+
+  // The API can't sort by the date attribute, so this fetches the dates of
+  // all posts, sorts them here and then fetches the latest post with its
+  // media.
+  async _updateGetData(url) {
+    const list = await this.appState.apiGet(url)
+    if ('error' in list) {
+      this._setError(list)
+      return
+    }
+    const [latest] = sortBlogPosts(list.data ?? [])
+    if (!latest) {
+      this._setData([])
+      return
+    }
+    const data = await this.appState.apiGet(
+      `/api/sources/${latest.handle}?extend=media_list&keys=handle,gramps_id,title,attribute_list,change,media_list,extended`
+    )
+    if ('error' in data) {
+      this._setError(data)
+      return
+    }
+    this._setData([data.data])
+  }
+
+  _setData(data) {
+    this._data = {data}
+    this.error = false
+    this._fireUpdateEvent()
+  }
+
+  _setError(data) {
+    this.error = true
+    this._errorMessage = data.error
+    this._errorDetail = data.errorDetail ?? {}
   }
 }
 

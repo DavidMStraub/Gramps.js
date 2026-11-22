@@ -66,12 +66,24 @@ export function formatBlogPostDate(source, lang = 'en') {
   })
 }
 
-// The posts sorted newest first; posts with the same date are ordered by
-// their last change.
+// The calendar day a post's date is shown on, as a UTC timestamp.
+function blogPostDay(source) {
+  const postDate = blogPostDate(source)
+  if (!postDate) {
+    return 0
+  }
+  const {date, utc} = postDate
+  return utc
+    ? date.getTime()
+    : Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+// The posts sorted newest first by the day they are shown on; posts on the
+// same day are ordered by their last change.
 export function sortBlogPosts(sources) {
-  const key = source => blogPostDate(source)?.date.getTime() ?? 0
   return [...sources].sort(
-    (a, b) => key(b) - key(a) || (b.change ?? 0) - (a.change ?? 0)
+    (a, b) =>
+      blogPostDay(b) - blogPostDay(a) || (b.change ?? 0) - (a.change ?? 0)
   )
 }
 
