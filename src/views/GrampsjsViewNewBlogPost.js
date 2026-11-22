@@ -11,6 +11,7 @@ import {GrampsjsViewNewSource} from './GrampsjsViewNewSource.js'
 import {makeHandle, fireEvent, reportRequiredField} from '../util.js'
 import {clearDraftsWithPrefix} from '../api.js'
 import {clearTagCache, fetchAllTags} from '../tags.js'
+import {BLOG_DATE_ATTRIBUTE, blogDateAttribute, todayIsoDate} from '../blog.js'
 
 const dataDefault = {
   _class: 'Source',
@@ -147,10 +148,17 @@ export class GrampsjsViewNewBlogPost extends GrampsjsViewNewSource {
         [this._blogTagHandle, ...(this.data.tag_list || [])].filter(Boolean)
       ),
     ]
+    const attributeList = [
+      ...(source.attribute_list || []).filter(
+        att => att.type !== BLOG_DATE_ATTRIBUTE
+      ),
+      blogDateAttribute(todayIsoDate()),
+    ]
     if (!note?.text?.string) {
       return [
         {
           ...source,
+          attribute_list: attributeList,
           tag_list: tagList,
           media_list: mediaRefs,
         },
@@ -162,6 +170,7 @@ export class GrampsjsViewNewBlogPost extends GrampsjsViewNewSource {
       {
         ...source,
         handle: handleSource,
+        attribute_list: attributeList,
         note_list: [handleNote],
         tag_list: tagList,
         media_list: mediaRefs,
