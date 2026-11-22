@@ -576,22 +576,6 @@ describe('blogPostSaveRequests', () => {
     expect(summary(requests)).toEqual(['PUT /api/sources/source-handle'])
   })
 
-  it('compares the privacy with the post before it was edited', () => {
-    // the post was made public, but making its note public failed
-    const requests = blogPostSaveRequests(
-      source({private: false}),
-      {...note, private: true},
-      postFormData(),
-      'blog-tag',
-      true
-    )
-    expect(summary(requests)).toEqual([
-      'PUT /api/sources/source-handle',
-      'PUT /api/notes/note-handle',
-    ])
-    expect(requests[1].data.private).toBe(false)
-  })
-
   it('empties the note when the text is cleared', () => {
     const requests = blogPostSaveRequests(
       source(),

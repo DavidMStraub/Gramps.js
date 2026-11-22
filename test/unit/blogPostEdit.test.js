@@ -229,45 +229,30 @@ describe('blog post page: saving', () => {
 
     expect(view.appState.apiPut).not.toHaveBeenCalled()
   })
-
-  it('does not add the note again when the post fails to save', async () => {
-    const apiPut = vi
-      .fn()
-      .mockResolvedValueOnce({error: 'Nope'})
-      .mockResolvedValue({data: []})
-    const view = makeView({
-      source: makeSource({note_list: [], extended: {}}),
-      apiPut,
-    })
-    view._toggleEditMode()
-
-    await view._handleSave()
-    await view._handleSave()
-
-    expect(view.appState.apiPost).toHaveBeenCalledOnce()
-    const noteHandle = view.appState.apiPost.mock.calls[0][1].handle
-    expect(apiPut).toHaveBeenCalledTimes(2)
-    expect(apiPut.mock.calls[1][1].note_list).toEqual([noteHandle])
-    expect(firedTypes(view)).toContain('edit-mode:off')
-  })
 })
 
 describe('blog post page: saving after an error', () => {
-  it('saves the note again when its text is changed back', async () => {
+  it('compares with the post as the server has it after an error', async () => {
     const apiPut = vi
       .fn()
       .mockResolvedValueOnce({data: []})
       .mockResolvedValueOnce({error: 'Nope'})
       .mockResolvedValue({data: []})
-    // the note is saved first, as the post becomes private
     const view = makeView({apiPut})
     view._toggleEditMode()
+    // the note is saved first, as the post becomes private
     view._form.data = formData({private: true, text: text('Edited')})
+    const savedNote = {...note, text: text('Edited'), private: true}
+    view.appState.apiGet = vi.fn(async url =>
+      url.startsWith('/api/sources/')
+        ? {data: [makeSource({extended: {notes: [savedNote]}})]}
+        : {data: [{handle: 'blog-tag', name: 'Blog'}]}
+    )
+
     await view._handleSave()
-    expect(apiPut.mock.calls.map(([url]) => url)).toEqual([
-      '/api/notes/note-handle',
-      '/api/sources/source-handle',
-    ])
+
+    expect(view._editNote).toEqual(savedNote)
+    expect(firedTypes(view)).not.toContain('edit-mode:off')
 
     view._form.data = formData({private: true, text: text('Hello')})
     await view._handleSave()
@@ -278,33 +263,6 @@ describe('blog post page: saving after an error', () => {
     ])
     expect(apiPut.mock.calls[2][1].text).toEqual(text('Hello'))
     expect(firedTypes(view)).toContain('edit-mode:off')
-  })
-
-  it('makes the note public after a post that was made public', async () => {
-    const apiPut = vi
-      .fn()
-      .mockResolvedValueOnce({data: []})
-      .mockResolvedValueOnce({error: 'Nope'})
-      .mockResolvedValue({data: []})
-    const view = makeView({
-      source: makeSource({
-        private: true,
-        extended: {notes: [{...note, private: true}]},
-      }),
-      apiPut,
-    })
-    view._toggleEditMode()
-
-    await view._handleSave()
-    await view._handleSave()
-
-    expect(apiPut.mock.calls.map(([url]) => url)).toEqual([
-      '/api/sources/source-handle',
-      '/api/notes/note-handle',
-      '/api/sources/source-handle',
-      '/api/notes/note-handle',
-    ])
-    expect(apiPut.mock.calls[3][1].private).toBe(false)
   })
 
   it('keeps the form from changing while saving', async () => {

@@ -185,19 +185,12 @@ export function newBlogPostObjects(data, blogTagHandle) {
 
 // The requests saving the data of the form to a post, as [{method, url,
 // data}] in order. `source` and `note` are the post and its note as saved,
-// the note null without one, and `wasPrivate` whether the post was private
-// before it was edited. A post without a note gets one for its text, added
-// before the post refers to it. When the post's privacy changes, the note
-// follows it, before the post becomes private and after it becomes public,
-// so a failed request never leaves the text more public than the post;
-// otherwise the note keeps its own privacy.
-export function blogPostSaveRequests(
-  source,
-  note,
-  data,
-  blogTagHandle,
-  wasPrivate = Boolean(source.private)
-) {
+// the note null without one. A post without a note gets one for its text,
+// added before the post refers to it. When the post's privacy changes, the
+// note follows it, before the post becomes private and after it becomes
+// public, so a failed request never leaves the text more public than the
+// post; otherwise the note keeps its own privacy.
+export function blogPostSaveRequests(source, note, data, blogTagHandle) {
   const writable = toWritableObject(source)
   const updated = {
     _class: 'Source',
@@ -223,7 +216,7 @@ export function blogPostSaveRequests(
     updated.note_list = [...(updated.note_list ?? []), newNote.handle]
     return [{method: 'POST', url: '/api/notes/', data: newNote}, putSource()]
   }
-  const privacyChanged = wasPrivate !== updated.private
+  const privacyChanged = Boolean(source.private) !== updated.private
   const noteNew = {
     _class: 'Note',
     ...toWritableObject(note),

@@ -51,11 +51,9 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
     this._dataNotes = []
     this._firstLoaded = false
     this._saving = false
-    // the post and its note as saved while editing, and whether the post
-    // was private before
+    // the post and its note as the server has them while editing
     this._editSource = null
     this._editNote = null
-    this._editWasPrivate = false
     this._boundToggleEditMode = this._toggleEditMode.bind(this)
     this._boundDisableEditMode = this._disableEditMode.bind(this)
     this._boundHandleSave = this._handleSave.bind(this)
@@ -100,7 +98,6 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
   _activateEditMode() {
     this._editSource = this._source
     this._editNote = blogPostNote(this._source) ?? null
-    this._editWasPrivate = Boolean(this._source.private)
     this.edit = true
     fireEvent(this, 'edit-mode:on', {
       title: this._('Edit'),
@@ -200,10 +197,9 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
   }
 
   // Sends the requests saving the data in order, stopping at the first
-  // error, and resolves to whether all succeeded. The post and its note are
-  // kept as saved, so saving again after an error compares with them: a
-  // note added before the error becomes the post's note, and a note saved
-  // before it is saved again if its text changed back.
+  // error, and resolves to whether all succeeded. After an error, the post
+  // and its note are loaded again, so saving again compares the form with
+  // what the server has; the form keeps what was entered.
   async _save(data) {
     const tags = await fetchAllTags(this.appState)
     const blogTagHandle =
@@ -214,8 +210,7 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
         this._editSource,
         this._editNote,
         data,
-        blogTagHandle,
-        this._editWasPrivate
+        blogTagHandle
       ),
     ]
     for (const {method, url, data: object} of requests) {
@@ -226,21 +221,29 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
           : await this.appState.apiPut(url, object)
       if ('error' in res) {
         fireEvent(this, 'grampsjs:error', {message: res.error})
+        await this._reloadEdited()
         return false
-      }
-      if (url.startsWith('/api/notes/')) {
-        this._editNote = object
-      } else if (url.startsWith('/api/sources/')) {
-        this._editSource = object
-      }
-      if (method === 'POST') {
-        this._editSource = {
-          ...this._editSource,
-          note_list: [...(this._editSource.note_list ?? []), object.handle],
-        }
       }
     }
     return true
+  }
+
+  async _reloadEdited() {
+    const res = await this.appState.apiGet(this._sourceUrl())
+    const source = res.data?.[0]
+    if (source) {
+      this._editSource = source
+      this._editNote = blogPostNote(source) ?? null
+    }
+  }
+
+  // a source without the Blog tag is not a blog post
+  _sourceUrl() {
+    return `/api/sources/?rules=${encodeURIComponent(
+      JSON.stringify(blogPostRules(this.grampsId))
+    )}&locale=${
+      this.appState.i18n.lang || 'en'
+    }&profile=all&backlinks=true&extend=all`
   }
 
   renderPosts() {
@@ -324,13 +327,7 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
 
   async _fetchData() {
     this.loading = true
-    // a source without the Blog tag is not a blog post
-    const uri = `/api/sources/?rules=${encodeURIComponent(
-      JSON.stringify(blogPostRules(this.grampsId))
-    )}&locale=${
-      this.appState.i18n.lang || 'en'
-    }&profile=all&backlinks=true&extend=all`
-    await this.appState.apiGet(uri).then(data => {
+    await this.appState.apiGet(this._sourceUrl()).then(data => {
       if ('data' in data) {
         this.error = false
         this._dataSources = data.data

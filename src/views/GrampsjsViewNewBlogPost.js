@@ -144,6 +144,9 @@ export class GrampsjsViewNewBlogPost extends GrampsjsView {
       return
     }
     this._isSaving = true
+    // nothing entered while adding is lost when the form is reset
+    const form = this._form
+    form.inert = true
     try {
       if (!this._blogTagHandle) {
         await this._fetchBlogTagHandle()
@@ -175,6 +178,7 @@ export class GrampsjsViewNewBlogPost extends GrampsjsView {
       }
     } finally {
       this._isSaving = false
+      form.inert = false
     }
   }
 }

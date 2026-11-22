@@ -242,6 +242,27 @@ describe('new blog post: submit', () => {
     )
   })
 
+  it('keeps the form from changing while adding', async () => {
+    const element = makeElement()
+    element._blogTagHandle = 'blog-tag-handle'
+    let resolveApiPost
+    const apiPost = vi.fn(
+      () =>
+        new Promise(resolve => {
+          resolveApiPost = resolve
+        })
+    )
+    element.appState = {apiPost, i18n: {strings: {}}}
+
+    const submitPromise = element._submit()
+    await vi.waitFor(() => expect(apiPost).toHaveBeenCalled())
+    expect(element._form.inert).toBe(true)
+
+    resolveApiPost(created)
+    await submitPromise
+    expect(element._form.inert).toBe(false)
+  })
+
   it('ignores a second submit while the first one is still in flight', async () => {
     const element = makeElement()
     element._blogTagHandle = 'blog-tag-handle'
