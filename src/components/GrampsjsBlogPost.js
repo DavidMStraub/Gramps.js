@@ -1,5 +1,4 @@
 import {html, css, LitElement} from 'lit'
-import '@material/web/button/text-button.js'
 import {sharedStyles} from '../SharedStyles.js'
 
 import './GrampsjsImg.js'
@@ -60,10 +59,6 @@ export class GrampsjsBlogPost extends GrampsjsAppStateMixin(LitElement) {
           --grampsjs-note-line-height: 1.7em;
           --grampsjs-note-font-size: 18px;
           --grampsjs-note-font-family: 'EB Garamond x';
-        }
-
-        #btn-details {
-          margin-top: 2em;
         }
 
         @media (min-width: 768px) {
@@ -131,12 +126,6 @@ export class GrampsjsBlogPost extends GrampsjsAppStateMixin(LitElement) {
                   ></grampsjs-gallery>
                 `
               : ''}
-
-            <md-text-button
-              id="btn-details"
-              href="/source/${this.source.gramps_id}"
-              >${this._('Details')}</md-text-button
-            >
           </div>
         </div>
       </div>

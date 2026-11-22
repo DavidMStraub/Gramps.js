@@ -517,5 +517,6 @@
   "Changes applied": "Changes applied",
   "These changes can no longer be applied.": "These changes can no longer be applied.",
   "Attach images": "Attach images",
-  "Media files are imported separately, under %s.": "Media files are imported separately, under %s."
+  "Media files are imported separately, under %s.": "Media files are imported separately, under %s.",
+  "Cover image": "Cover image"
 }

@@ -1,10 +1,18 @@
 import {describe, it, expect, vi} from 'vitest'
 import {
+  blogMediaRequests,
   blogPostDate,
+  blogPostIsoDate,
+  blogPostNote,
+  blogPostSaveRequests,
+  blogTagList,
   formatBlogPostDate,
   grampsIdRules,
+  isIsoDate,
+  newBlogPostObjects,
   sortBlogPosts,
-  todayIsoDate,
+  withBlogDate,
+  localIsoDate,
 } from '../../src/blog.js'
 import {GrampsjsViewBlog} from '../../src/views/GrampsjsViewBlog.js'
 import {GrampsjsViewRecentBlogPosts} from '../../src/views/GrampsjsViewRecentBlogPosts.js'
@@ -75,9 +83,9 @@ describe('formatBlogPostDate', () => {
   })
 })
 
-describe('todayIsoDate', () => {
+describe('localIsoDate', () => {
   it('is the local calendar date', () => {
-    expect(todayIsoDate(new Date(2026, 0, 3, 23, 59))).toBe('2026-01-03')
+    expect(localIsoDate(new Date(2026, 0, 3, 23, 59))).toBe('2026-01-03')
   })
 })
 
@@ -305,5 +313,299 @@ describe('latest blog post widget: fetching', () => {
     await postError._updateGetData(postError.getUrl())
     expect(postError.error).toBe(true)
     expect(postError._errorMessage).toBe('Gone')
+  })
+})
+
+describe('blogPostIsoDate', () => {
+  it('is the date attribute', () => {
+    expect(
+      blogPostIsoDate({
+        change: CHANGE,
+        attribute_list: [dateAttr('2024-03-05')],
+      })
+    ).toBe('2024-03-05')
+  })
+
+  it('is the local day of the last change without a date attribute', () => {
+    const tz = process.env.TZ
+    process.env.TZ = 'America/Los_Angeles'
+    try {
+      // 07:00 UTC on 22 November is 21 November in Los Angeles
+      expect(blogPostIsoDate({change: Date.UTC(2026, 10, 22, 7) / 1000})).toBe(
+        '2026-11-21'
+      )
+    } finally {
+      process.env.TZ = tz
+    }
+  })
+
+  it('is empty without a date', () => {
+    expect(blogPostIsoDate({})).toBe('')
+  })
+})
+
+describe('withBlogDate', () => {
+  it('replaces date attributes and keeps the others', () => {
+    const other = {_class: 'SrcAttribute', type: 'Other', value: 'x'}
+    expect(
+      withBlogDate(
+        [dateAttr('2020-01-01'), other, dateAttr('bad')],
+        '2026-11-22'
+      )
+    ).toEqual([other, dateAttr('2026-11-22')])
+    expect(withBlogDate(undefined, '2026-11-22')).toEqual([
+      dateAttr('2026-11-22'),
+    ])
+  })
+})
+
+describe('isIsoDate', () => {
+  it('accepts valid calendar dates only', () => {
+    expect(isIsoDate('2024-02-29')).toBe(true)
+    expect(isIsoDate('2023-02-29')).toBe(false)
+    expect(isIsoDate('')).toBe(false)
+    expect(isIsoDate(undefined)).toBe(false)
+  })
+})
+
+describe('blogPostNote', () => {
+  it('is the first note in note_list order that exists', () => {
+    const source = {
+      note_list: ['missing', 'b', 'a'],
+      extended: {notes: [{handle: 'a'}, {handle: 'b'}]},
+    }
+    expect(blogPostNote(source)).toEqual({handle: 'b'})
+  })
+
+  it('is undefined without notes', () => {
+    expect(blogPostNote({})).toBeUndefined()
+  })
+})
+
+const styled = string => ({_class: 'StyledText', string, tags: []})
+
+const postFormData = (props = {}) => ({
+  title: ' My post ',
+  author: 'Me',
+  date: '2025-01-02',
+  text: styled('Hello'),
+  media_list: [{ref: 'media-a', rect: [1, 2, 3, 4]}],
+  tag_list: ['other'],
+  private: false,
+  ...props,
+})
+
+describe('newBlogPostObjects', () => {
+  it('adds the post and its note', () => {
+    const [source, note] = newBlogPostObjects(postFormData(), 'blog-tag')
+
+    expect(source).toMatchObject({
+      _class: 'Source',
+      title: 'My post',
+      author: 'Me',
+      private: false,
+      tag_list: ['blog-tag', 'other'],
+      media_list: [{ref: 'media-a', rect: [1, 2, 3, 4]}],
+      attribute_list: [dateAttr('2025-01-02')],
+      note_list: [note.handle],
+    })
+    expect(note).toMatchObject({
+      _class: 'Note',
+      text: styled('Hello'),
+      tag_list: ['blog-tag', 'other'],
+      private: false,
+    })
+  })
+
+  it('adds only the post without text', () => {
+    const objects = newBlogPostObjects(
+      postFormData({text: styled('  '), private: true}),
+      'blog-tag'
+    )
+    expect(objects).toHaveLength(1)
+    expect(objects[0].note_list).toBeUndefined()
+    expect(objects[0].private).toBe(true)
+  })
+
+  it('gives the note the privacy of the post', () => {
+    const [, note] = newBlogPostObjects(
+      postFormData({private: true}),
+      'blog-tag'
+    )
+    expect(note.private).toBe(true)
+  })
+})
+
+describe('blogPostSaveRequests', () => {
+  const note = {
+    _class: 'Note',
+    handle: 'note-handle',
+    gramps_id: 'N1',
+    text: styled('Hello'),
+    private: false,
+    tag_list: ['blog-tag'],
+  }
+
+  const source = (props = {}) => ({
+    _class: 'Source',
+    handle: 'source-handle',
+    gramps_id: 'S1',
+    title: 'Old title',
+    pubinfo: 'kept',
+    private: false,
+    tag_list: ['blog-tag'],
+    note_list: ['note-handle'],
+    media_list: [],
+    attribute_list: [
+      {_class: 'SrcAttribute', type: 'Other', value: 'x'},
+      dateAttr('2024-03-05'),
+    ],
+    extended: {notes: [note]},
+    profile: {},
+    backlinks: {},
+    ...props,
+  })
+
+  const summary = requests => requests.map(r => `${r.method} ${r.url}`)
+
+  it('saves only the post when the text is unchanged', () => {
+    const requests = blogPostSaveRequests(
+      source(),
+      note,
+      postFormData(),
+      'blog-tag'
+    )
+
+    expect(summary(requests)).toEqual(['PUT /api/sources/source-handle'])
+    const {data} = requests[0]
+    expect(data).toMatchObject({
+      _class: 'Source',
+      handle: 'source-handle',
+      title: 'My post',
+      author: 'Me',
+      pubinfo: 'kept',
+      tag_list: ['blog-tag', 'other'],
+      note_list: ['note-handle'],
+      media_list: [{ref: 'media-a', rect: [1, 2, 3, 4]}],
+      attribute_list: [
+        {_class: 'SrcAttribute', type: 'Other', value: 'x'},
+        dateAttr('2025-01-02'),
+      ],
+    })
+    expect(data.extended).toBeUndefined()
+    expect(data.profile).toBeUndefined()
+    expect(data.backlinks).toBeUndefined()
+  })
+
+  it('updates the note after a public post', () => {
+    const requests = blogPostSaveRequests(
+      source(),
+      note,
+      postFormData({text: styled('New')}),
+      'blog-tag'
+    )
+
+    expect(summary(requests)).toEqual([
+      'PUT /api/sources/source-handle',
+      'PUT /api/notes/note-handle',
+    ])
+    expect(requests[1].data).toEqual({
+      ...note,
+      text: styled('New'),
+      private: false,
+    })
+  })
+
+  it('makes the note private before the post', () => {
+    const requests = blogPostSaveRequests(
+      source(),
+      note,
+      postFormData({private: true}),
+      'blog-tag'
+    )
+
+    expect(summary(requests)).toEqual([
+      'PUT /api/notes/note-handle',
+      'PUT /api/sources/source-handle',
+    ])
+    expect(requests[0].data.private).toBe(true)
+    expect(requests[0].data.text).toEqual(styled('Hello'))
+  })
+
+  it('makes the note public after the post', () => {
+    const requests = blogPostSaveRequests(
+      source({private: true}),
+      {...note, private: true},
+      postFormData(),
+      'blog-tag'
+    )
+    expect(summary(requests)).toEqual([
+      'PUT /api/sources/source-handle',
+      'PUT /api/notes/note-handle',
+    ])
+  })
+
+  it('empties the note when the text is cleared', () => {
+    const requests = blogPostSaveRequests(
+      source(),
+      note,
+      postFormData({text: styled('')}),
+      'blog-tag'
+    )
+    expect(requests[1].data.text.string).toBe('')
+  })
+
+  it('adds a note for text on a post without one', () => {
+    const [post, put] = blogPostSaveRequests(
+      source({note_list: []}),
+      null,
+      postFormData(),
+      'blog-tag'
+    )
+
+    expect(post).toMatchObject({method: 'POST', url: '/api/notes/'})
+    expect(post.data).toMatchObject({
+      _class: 'Note',
+      text: styled('Hello'),
+      tag_list: ['blog-tag', 'other'],
+      private: false,
+    })
+    expect(put.data.note_list).toEqual([post.data.handle])
+  })
+
+  it('adds no note without text', () => {
+    const requests = blogPostSaveRequests(
+      source({note_list: []}),
+      null,
+      postFormData({text: styled(' ')}),
+      'blog-tag'
+    )
+    expect(summary(requests)).toEqual(['PUT /api/sources/source-handle'])
+  })
+})
+
+describe('blogTagList', () => {
+  it('adds the Blog tag once', () => {
+    expect(blogTagList(['a', 'blog'], 'blog')).toEqual(['blog', 'a'])
+    expect(blogTagList(undefined, '')).toEqual([])
+  })
+})
+
+describe('blogMediaRequests', () => {
+  it('saves the media objects with a changed privacy the post refers to', () => {
+    const requests = blogMediaRequests({
+      media_list: [{ref: 'a'}, {ref: 'b'}],
+      media_updates: [
+        {handle: 'a', private: true},
+        {handle: 'gone', private: true},
+      ],
+    })
+    expect(requests).toEqual([
+      {method: 'PUT', url: '/api/media/a', data: {handle: 'a', private: true}},
+    ])
+  })
+
+  it('is empty without updates', () => {
+    expect(blogMediaRequests({media_list: [{ref: 'a'}]})).toEqual([])
   })
 })

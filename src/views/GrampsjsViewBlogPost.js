@@ -1,12 +1,42 @@
-import {html} from 'lit'
+import {css, html} from 'lit'
+import {mdiPencil} from '@mdi/js'
 
+import '@material/web/fab/fab.js'
 import {GrampsjsView} from './GrampsjsView.js'
 import '../components/GrampsjsBlogPost.js'
+import '../components/GrampsjsBlogPostForm.js'
+import '../components/GrampsjsIcon.js'
+import {GrampsjsStaleDataMixin} from '../mixins/GrampsjsStaleDataMixin.js'
+import {clearDraftsWithPrefix} from '../api.js'
+import {fetchAllTags} from '../tags.js'
+import {fireEvent} from '../util.js'
+import {
+  blogMediaRequests,
+  blogPostNote,
+  blogPostSaveRequests,
+  isIsoDate,
+} from '../blog.js'
 
-export class GrampsjsViewBlogPost extends GrampsjsView {
+// The page of a blog post. In edit mode, it shows the form of the post,
+// which the save button of edit mode saves.
+export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
+  static get styles() {
+    return [
+      super.styles,
+      css`
+        md-fab {
+          position: fixed;
+          bottom: 32px;
+          right: 32px;
+        }
+      `,
+    ]
+  }
+
   static get properties() {
     return {
       grampsId: {type: String},
+      edit: {type: Boolean},
       _dataSources: {type: Array},
       _dataNotes: {type: Array},
     }
@@ -15,13 +45,188 @@ export class GrampsjsViewBlogPost extends GrampsjsView {
   constructor() {
     super()
     this.grampsId = ''
+    this.edit = false
     this._dataSources = []
     this._dataNotes = []
     this._firstLoaded = false
+    this._saving = false
+    // the post and its note as saved while editing
+    this._editSource = null
+    this._editNote = null
+    this._boundToggleEditMode = this._toggleEditMode.bind(this)
+    this._boundDisableEditMode = this._disableEditMode.bind(this)
+    this._boundHandleSave = this._handleSave.bind(this)
+    this._boundDeleteSelf = this._deleteSelf.bind(this)
+  }
+
+  get canEdit() {
+    return Boolean(this.appState?.permissions?.canEdit)
+  }
+
+  get _source() {
+    return this._dataSources[0] ?? null
   }
 
   renderContent() {
-    return html` ${this.renderPosts()} `
+    if (this.edit && this._source) {
+      return html`
+        <grampsjs-blog-post-form
+          .source="${this._source}"
+          .appState="${this.appState}"
+        ></grampsjs-blog-post-form>
+      `
+    }
+    return html`
+      ${this.renderPosts()}
+      ${this.canEdit && this._source ? this.renderFab() : ''}
+    `
+  }
+
+  renderFab() {
+    return html`
+      <md-fab variant="primary" @click=${this._activateEditMode}>
+        <grampsjs-icon
+          slot="icon"
+          .path="${mdiPencil}"
+          color="currentColor"
+        ></grampsjs-icon>
+      </md-fab>
+    `
+  }
+
+  _activateEditMode() {
+    this._editSource = this._source
+    this._editNote = blogPostNote(this._source) ?? null
+    this.edit = true
+    fireEvent(this, 'edit-mode:on', {
+      title: this._('Edit'),
+      saveButton: true,
+    })
+  }
+
+  _toggleEditMode() {
+    if (!this.active || !this.canEdit || !this._source) {
+      return
+    }
+    if (this.edit) {
+      fireEvent(this, 'edit-mode:close-request')
+    } else {
+      this._activateEditMode()
+    }
+  }
+
+  // Deletes the post, as the delete button of edit mode does on object pages.
+  // Its note stays, like the notes of other deleted objects, and the deletion
+  // can be undone.
+  async _deleteSelf() {
+    const source = this._source
+    if (!this.active || !this.edit || !source) {
+      return
+    }
+    const {handle, gramps_id: grampsId} = source
+    const data = await this.appState.apiDelete(`/api/sources/${handle}`, {
+      dbChanged: false,
+    })
+    if ('error' in data) {
+      fireEvent(this, 'grampsjs:error', {message: data.error})
+      return
+    }
+    clearDraftsWithPrefix(`blog:${grampsId}:`)
+    this.edit = false
+    this._dataSources = []
+    fireEvent(this, 'nav', {path: 'blog'})
+    fireEvent(this, 'db:changed')
+    fireEvent(this, 'transaction:undo', {
+      message: this._('Object %s deleted.', grampsId),
+      transaction: data.data,
+      redirect: `blog/${grampsId}`,
+    })
+  }
+
+  // the post may have changed while it was edited
+  _disableEditMode() {
+    if (!this.edit) {
+      return
+    }
+    this.edit = false
+    if (this._isStale) {
+      this._isStale = false
+      this._fetchData()
+    }
+  }
+
+  // while editing, the post reloads when edit mode ends, so the form stays
+  handleUpdateStaleData() {
+    if (this.edit) {
+      this._isStale = true
+    } else if (this.grampsId) {
+      this._fetchData()
+    }
+  }
+
+  get _form() {
+    return this.renderRoot.querySelector('grampsjs-blog-post-form')
+  }
+
+  // Saves the form; edit mode ends if all requests succeeded
+  async _handleSave() {
+    if (!this.active || !this.edit || this._saving) {
+      return
+    }
+    const {data} = this._form
+    if (!data.title.trim() || !isIsoDate(data.date)) {
+      fireEvent(this, 'grampsjs:error', {
+        message: this._('This field is mandatory'),
+      })
+      return
+    }
+    this._saving = true
+    try {
+      if (await this._save(data)) {
+        clearDraftsWithPrefix(`blog:${this.grampsId}:`)
+        fireEvent(this, 'edit-mode:off')
+      }
+    } finally {
+      this._saving = false
+    }
+  }
+
+  // Sends the requests saving the data in order, stopping at the first
+  // error, and resolves to whether all succeeded. A note added before a
+  // failed request becomes the post's note, so saving again doesn't add
+  // another.
+  async _save(data) {
+    const tags = await fetchAllTags(this.appState)
+    const blogTagHandle =
+      (tags.data ?? []).find(tag => tag.name === 'Blog')?.handle ?? ''
+    const requests = [
+      ...blogMediaRequests(data),
+      ...blogPostSaveRequests(
+        this._editSource,
+        this._editNote,
+        data,
+        blogTagHandle
+      ),
+    ]
+    for (const {method, url, data: object} of requests) {
+      // eslint-disable-next-line no-await-in-loop
+      const res =
+        method === 'POST'
+          ? await this.appState.apiPost(url, object)
+          : await this.appState.apiPut(url, object)
+      if ('error' in res) {
+        fireEvent(this, 'grampsjs:error', {message: res.error})
+        return false
+      }
+      if (method === 'POST') {
+        this._editNote = object
+        this._editSource = {
+          ...this._editSource,
+          note_list: [...(this._editSource.note_list ?? []), object.handle],
+        }
+      }
+    }
+    return true
   }
 
   renderPosts() {
@@ -58,7 +263,7 @@ export class GrampsjsViewBlogPost extends GrampsjsView {
   }
 
   _getNotesUrl() {
-    const grampsId = this._dataSources[0]?.extended?.notes[0]?.gramps_id
+    const grampsId = blogPostNote(this._source)?.gramps_id
     if (!grampsId) {
       return ''
     }
@@ -85,6 +290,22 @@ export class GrampsjsViewBlogPost extends GrampsjsView {
     ) {
       this._fetchData()
     }
+  }
+
+  connectedCallback() {
+    super.connectedCallback()
+    window.addEventListener('edit-mode:toggle', this._boundToggleEditMode)
+    window.addEventListener('edit-mode:off', this._boundDisableEditMode)
+    window.addEventListener('edit-mode:save', this._boundHandleSave)
+    window.addEventListener('edit-mode:delete', this._boundDeleteSelf)
+  }
+
+  disconnectedCallback() {
+    window.removeEventListener('edit-mode:toggle', this._boundToggleEditMode)
+    window.removeEventListener('edit-mode:off', this._boundDisableEditMode)
+    window.removeEventListener('edit-mode:save', this._boundHandleSave)
+    window.removeEventListener('edit-mode:delete', this._boundDeleteSelf)
+    super.disconnectedCallback()
   }
 
   async _fetchData() {

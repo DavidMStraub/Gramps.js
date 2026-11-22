@@ -1,7 +1,7 @@
 // Helpers for blog posts: sources tagged "Blog" whose publication date is
 // stored as a source attribute.
 
-import {intlLocale} from './util.js'
+import {intlLocale, makeHandle, toWritableObject} from './util.js'
 
 // The source attribute type holding a post's date as "YYYY-MM-DD".
 export const BLOG_DATE_ATTRIBUTE = 'Date'
@@ -27,15 +27,39 @@ function parseIsoDate(value) {
   return date
 }
 
-// Today's date in the local time zone as "YYYY-MM-DD".
-export function todayIsoDate(now = new Date()) {
+// The date in the local time zone as "YYYY-MM-DD", by default today's.
+export function localIsoDate(date = new Date()) {
   const pad = n => String(n).padStart(2, '0')
-  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}`
+}
+
+// Whether a string is a valid "YYYY-MM-DD" calendar date.
+export function isIsoDate(value) {
+  return parseIsoDate(value) !== null
 }
 
 // The date attribute for a post published on the given "YYYY-MM-DD" date.
 export function blogDateAttribute(value) {
   return {_class: 'SrcAttribute', type: BLOG_DATE_ATTRIBUTE, value}
+}
+
+// The attribute list with its date attributes replaced by one for the
+// given "YYYY-MM-DD" date.
+export function withBlogDate(attributeList, value) {
+  return [
+    ...(attributeList ?? []).filter(att => att.type !== BLOG_DATE_ATTRIBUTE),
+    blogDateAttribute(value),
+  ]
+}
+
+// The first note of a post that exists, from its extended notes.
+export function blogPostNote(source) {
+  const notes = source?.extended?.notes ?? []
+  return (source?.note_list ?? [])
+    .map(handle => notes.find(note => note?.handle === handle))
+    .find(Boolean)
 }
 
 // A post's date as {date, utc}. It is the date attribute if the source has
@@ -52,6 +76,17 @@ export function blogPostDate(source) {
     return {date: new Date(source.change * 1000), utc: false}
   }
   return null
+}
+
+// The day a post's date is shown on as "YYYY-MM-DD", or "" without a date.
+export function blogPostIsoDate(source) {
+  const postDate = blogPostDate(source)
+  if (!postDate) {
+    return ''
+  }
+  return postDate.utc
+    ? postDate.date.toISOString().slice(0, 10)
+    : localIsoDate(postDate.date)
 }
 
 // A post's date formatted for the given Gramps language code.
@@ -96,4 +131,109 @@ export function grampsIdRules(grampsIds) {
     function: 'or',
     rules: grampsIds.map(id => ({name: 'HasIdOf', values: [id]})),
   }
+}
+
+// The tag list with the Blog tag
+export function blogTagList(tagList, blogTagHandle) {
+  return [...new Set([blogTagHandle, ...(tagList ?? [])].filter(Boolean))]
+}
+
+// The source properties set by the form of a post, from its data
+function blogSourceProps(data, attributeList, blogTagHandle) {
+  return {
+    title: data.title.trim(),
+    author: data.author,
+    private: Boolean(data.private),
+    tag_list: blogTagList(data.tag_list, blogTagHandle),
+    media_list: data.media_list,
+    attribute_list: withBlogDate(attributeList, data.date),
+  }
+}
+
+const hasText = text => Boolean(text?.string?.trim())
+
+// The objects adding a post from the data of its form: the source, and the
+// note with its text if it has one
+export function newBlogPostObjects(data, blogTagHandle) {
+  const source = {
+    _class: 'Source',
+    handle: makeHandle(),
+    ...blogSourceProps(data, [], blogTagHandle),
+  }
+  if (!hasText(data.text)) {
+    return [source]
+  }
+  const note = {
+    _class: 'Note',
+    handle: makeHandle(),
+    text: data.text,
+    tag_list: source.tag_list,
+    private: source.private,
+  }
+  return [{...source, note_list: [note.handle]}, note]
+}
+
+// The requests saving the data of the form to a post, as [{method, url,
+// data}] in order. `note` is the post's note, or null. A post without a note
+// gets one for its text, added before the post refers to it. The note gets
+// the privacy of the post, before the post becomes private and after it
+// becomes public, so a failed request never leaves the text more public
+// than the post.
+export function blogPostSaveRequests(source, note, data, blogTagHandle) {
+  const writable = toWritableObject(source)
+  const updated = {
+    _class: 'Source',
+    ...writable,
+    ...blogSourceProps(data, writable.attribute_list, blogTagHandle),
+  }
+  const putSource = () => ({
+    method: 'PUT',
+    url: `/api/sources/${updated.handle}`,
+    data: updated,
+  })
+  if (!note) {
+    if (!hasText(data.text)) {
+      return [putSource()]
+    }
+    const newNote = {
+      _class: 'Note',
+      handle: makeHandle(),
+      text: data.text,
+      tag_list: updated.tag_list,
+      private: updated.private,
+    }
+    updated.note_list = [...(updated.note_list ?? []), newNote.handle]
+    return [{method: 'POST', url: '/api/notes/', data: newNote}, putSource()]
+  }
+  const noteNew = {
+    _class: 'Note',
+    ...toWritableObject(note),
+    text: data.text,
+    private: updated.private,
+  }
+  if (
+    JSON.stringify(noteNew.text) === JSON.stringify(note.text) &&
+    Boolean(note.private) === updated.private
+  ) {
+    return [putSource()]
+  }
+  const putNote = {
+    method: 'PUT',
+    url: `/api/notes/${noteNew.handle}`,
+    data: noteNew,
+  }
+  return updated.private ? [putNote, putSource()] : [putSource(), putNote]
+}
+
+// The requests saving the media objects whose privacy was changed in the
+// form of a post, for the media the post still refers to
+export function blogMediaRequests(data) {
+  const handles = new Set((data.media_list ?? []).map(ref => ref.ref))
+  return (data.media_updates ?? [])
+    .filter(media => handles.has(media.handle))
+    .map(media => ({
+      method: 'PUT',
+      url: `/api/media/${media.handle}`,
+      data: media,
+    }))
 }
