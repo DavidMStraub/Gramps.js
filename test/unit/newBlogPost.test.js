@@ -66,6 +66,40 @@ describe('new blog post: processed data', () => {
     expect(publicNote.private).toBe(false)
   })
 
+  it("stores today's date as the post's date attribute", () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 10, 22, 9, 30))
+    try {
+      const element = makeElement()
+      element._blogTagHandle = 'blog-tag-handle'
+      const note = {_class: 'Note', text: {_class: 'StyledText', string: 'Hi'}}
+      const dateAttr = {
+        _class: 'SrcAttribute',
+        type: 'Date',
+        value: '2026-11-22',
+      }
+
+      element.data = {_class: 'Source', title: 'Title'}
+      expect(element._processedData([])[0].attribute_list).toEqual([dateAttr])
+
+      element.data = {
+        _class: 'Source',
+        title: 'Title',
+        note,
+        attribute_list: [
+          {_class: 'SrcAttribute', type: 'Date', value: '2020-01-01'},
+          {_class: 'SrcAttribute', type: 'Other', value: 'x'},
+        ],
+      }
+      expect(element._processedData([])[0].attribute_list).toEqual([
+        {_class: 'SrcAttribute', type: 'Other', value: 'x'},
+        dateAttr,
+      ])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('deduplicates the Blog tag against tags the user already picked', () => {
     const element = makeElement()
     element._blogTagHandle = 'blog-tag-handle'

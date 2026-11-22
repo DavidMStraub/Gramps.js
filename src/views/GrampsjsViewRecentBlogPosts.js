@@ -2,6 +2,7 @@ import {html, css} from 'lit'
 
 import {GrampsjsConnectedComponent} from '../components/GrampsjsConnectedComponent.js'
 import '../components/GrampsjsSearchResultList.js'
+import {blogRules, formatBlogPostDate, sortBlogPosts} from '../blog.js'
 
 export class GrampsjsViewRecentBlogPosts extends GrampsjsConnectedComponent {
   static get styles() {
@@ -28,18 +29,21 @@ export class GrampsjsViewRecentBlogPosts extends GrampsjsConnectedComponent {
         <p>${this._('None')}.</p>
       `
     }
+    const [latest] = sortBlogPosts(this._data.data)
     return html`
       <h3>${this._('Latest Blog Post')}</h3>
       <grampsjs-search-result-list
         large
         linked
-        .data="${this._data.data.slice(0, 1).map(obj => ({
-          object: obj,
-          object_type: 'source',
-          path: `blog/${obj.gramps_id}`,
-        }))}"
+        .data="${[
+          {
+            object: latest,
+            object_type: 'source',
+            path: `blog/${latest.gramps_id}`,
+            secondary: formatBlogPostDate(latest, this.appState.i18n.lang),
+          },
+        ]}"
         .appState="${this.appState}"
-        date
         noSep
       >
       </grampsjs-search-result-list>
@@ -59,20 +63,11 @@ export class GrampsjsViewRecentBlogPosts extends GrampsjsConnectedComponent {
     `
   }
 
+  // the API can't sort by the date attribute, so this fetches all posts
   getUrl() {
-    const rules = {
-      rules: [
-        {
-          name: 'HasTag',
-          values: ['Blog'],
-        },
-      ],
-    }
     return `/api/sources/?rules=${encodeURIComponent(
-      JSON.stringify(rules)
-    )}&pagesize=1&sort=-change&locale=${
-      this.appState.i18n.lang || 'en'
-    }&profile=all&extend=all`
+      JSON.stringify(blogRules)
+    )}&extend=media_list&keys=handle,gramps_id,title,attribute_list,change,media_list,extended`
   }
 }
 
