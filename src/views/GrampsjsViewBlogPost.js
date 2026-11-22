@@ -13,6 +13,7 @@ import {fireEvent} from '../util.js'
 import {
   blogMediaRequests,
   blogPostNote,
+  blogPostRules,
   blogPostSaveRequests,
   isIsoDate,
 } from '../blog.js'
@@ -50,9 +51,11 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
     this._dataNotes = []
     this._firstLoaded = false
     this._saving = false
-    // the post and its note as saved while editing
+    // the post and its note as saved while editing, and whether the post
+    // was private before
     this._editSource = null
     this._editNote = null
+    this._editWasPrivate = false
     this._boundToggleEditMode = this._toggleEditMode.bind(this)
     this._boundDisableEditMode = this._disableEditMode.bind(this)
     this._boundHandleSave = this._handleSave.bind(this)
@@ -97,6 +100,7 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
   _activateEditMode() {
     this._editSource = this._source
     this._editNote = blogPostNote(this._source) ?? null
+    this._editWasPrivate = Boolean(this._source.private)
     this.edit = true
     fireEvent(this, 'edit-mode:on', {
       title: this._('Edit'),
@@ -168,12 +172,14 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
     return this.renderRoot.querySelector('grampsjs-blog-post-form')
   }
 
-  // Saves the form; edit mode ends if all requests succeeded
+  // Saves the form; edit mode ends if all requests succeeded. The form
+  // can't be changed while saving, so nothing entered meanwhile is lost.
   async _handleSave() {
     if (!this.active || !this.edit || this._saving) {
       return
     }
-    const {data} = this._form
+    const form = this._form
+    const {data} = form
     if (!data.title.trim() || !isIsoDate(data.date)) {
       fireEvent(this, 'grampsjs:error', {
         message: this._('This field is mandatory'),
@@ -181,6 +187,7 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
       return
     }
     this._saving = true
+    form.inert = true
     try {
       if (await this._save(data)) {
         clearDraftsWithPrefix(`blog:${this.grampsId}:`)
@@ -188,13 +195,15 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
       }
     } finally {
       this._saving = false
+      form.inert = false
     }
   }
 
   // Sends the requests saving the data in order, stopping at the first
-  // error, and resolves to whether all succeeded. A note added before a
-  // failed request becomes the post's note, so saving again doesn't add
-  // another.
+  // error, and resolves to whether all succeeded. The post and its note are
+  // kept as saved, so saving again after an error compares with them: a
+  // note added before the error becomes the post's note, and a note saved
+  // before it is saved again if its text changed back.
   async _save(data) {
     const tags = await fetchAllTags(this.appState)
     const blogTagHandle =
@@ -205,7 +214,8 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
         this._editSource,
         this._editNote,
         data,
-        blogTagHandle
+        blogTagHandle,
+        this._editWasPrivate
       ),
     ]
     for (const {method, url, data: object} of requests) {
@@ -218,8 +228,12 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
         fireEvent(this, 'grampsjs:error', {message: res.error})
         return false
       }
-      if (method === 'POST') {
+      if (url.startsWith('/api/notes/')) {
         this._editNote = object
+      } else if (url.startsWith('/api/sources/')) {
+        this._editSource = object
+      }
+      if (method === 'POST') {
         this._editSource = {
           ...this._editSource,
           note_list: [...(this._editSource.note_list ?? []), object.handle],
@@ -310,7 +324,10 @@ export class GrampsjsViewBlogPost extends GrampsjsStaleDataMixin(GrampsjsView) {
 
   async _fetchData() {
     this.loading = true
-    const uri = `/api/sources/?gramps_id=${this.grampsId}&locale=${
+    // a source without the Blog tag is not a blog post
+    const uri = `/api/sources/?rules=${encodeURIComponent(
+      JSON.stringify(blogPostRules(this.grampsId))
+    )}&locale=${
       this.appState.i18n.lang || 'en'
     }&profile=all&backlinks=true&extend=all`
     await this.appState.apiGet(uri).then(data => {

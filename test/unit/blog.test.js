@@ -4,6 +4,7 @@ import {
   blogPostDate,
   blogPostIsoDate,
   blogPostNote,
+  blogPostRules,
   blogPostSaveRequests,
   blogTagList,
   formatBlogPostDate,
@@ -545,6 +546,52 @@ describe('blogPostSaveRequests', () => {
     ])
   })
 
+  it('keeps a private note private when the post stays public', () => {
+    const privateNote = {...note, private: true}
+
+    const titleOnly = blogPostSaveRequests(
+      source(),
+      privateNote,
+      postFormData(),
+      'blog-tag'
+    )
+    expect(summary(titleOnly)).toEqual(['PUT /api/sources/source-handle'])
+
+    const newText = blogPostSaveRequests(
+      source(),
+      privateNote,
+      postFormData({text: styled('New')}),
+      'blog-tag'
+    )
+    expect(newText[1].data).toMatchObject({text: styled('New'), private: true})
+  })
+
+  it('keeps a public note public when the post stays private', () => {
+    const requests = blogPostSaveRequests(
+      source({private: true}),
+      note,
+      postFormData({private: true}),
+      'blog-tag'
+    )
+    expect(summary(requests)).toEqual(['PUT /api/sources/source-handle'])
+  })
+
+  it('compares the privacy with the post before it was edited', () => {
+    // the post was made public, but making its note public failed
+    const requests = blogPostSaveRequests(
+      source({private: false}),
+      {...note, private: true},
+      postFormData(),
+      'blog-tag',
+      true
+    )
+    expect(summary(requests)).toEqual([
+      'PUT /api/sources/source-handle',
+      'PUT /api/notes/note-handle',
+    ])
+    expect(requests[1].data.private).toBe(false)
+  })
+
   it('empties the note when the text is cleared', () => {
     const requests = blogPostSaveRequests(
       source(),
@@ -607,5 +654,16 @@ describe('blogMediaRequests', () => {
 
   it('is empty without updates', () => {
     expect(blogMediaRequests({media_list: [{ref: 'a'}]})).toEqual([])
+  })
+})
+
+describe('blogPostRules', () => {
+  it('matches the source with the ID and the Blog tag', () => {
+    expect(blogPostRules('S1')).toEqual({
+      rules: [
+        {name: 'HasIdOf', values: ['S1']},
+        {name: 'HasTag', values: ['Blog']},
+      ],
+    })
   })
 })

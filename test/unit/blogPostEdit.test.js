@@ -252,6 +252,97 @@ describe('blog post page: saving', () => {
   })
 })
 
+describe('blog post page: saving after an error', () => {
+  it('saves the note again when its text is changed back', async () => {
+    const apiPut = vi
+      .fn()
+      .mockResolvedValueOnce({data: []})
+      .mockResolvedValueOnce({error: 'Nope'})
+      .mockResolvedValue({data: []})
+    // the note is saved first, as the post becomes private
+    const view = makeView({apiPut})
+    view._toggleEditMode()
+    view._form.data = formData({private: true, text: text('Edited')})
+    await view._handleSave()
+    expect(apiPut.mock.calls.map(([url]) => url)).toEqual([
+      '/api/notes/note-handle',
+      '/api/sources/source-handle',
+    ])
+
+    view._form.data = formData({private: true, text: text('Hello')})
+    await view._handleSave()
+
+    expect(apiPut.mock.calls.slice(2).map(([url]) => url)).toEqual([
+      '/api/notes/note-handle',
+      '/api/sources/source-handle',
+    ])
+    expect(apiPut.mock.calls[2][1].text).toEqual(text('Hello'))
+    expect(firedTypes(view)).toContain('edit-mode:off')
+  })
+
+  it('makes the note public after a post that was made public', async () => {
+    const apiPut = vi
+      .fn()
+      .mockResolvedValueOnce({data: []})
+      .mockResolvedValueOnce({error: 'Nope'})
+      .mockResolvedValue({data: []})
+    const view = makeView({
+      source: makeSource({
+        private: true,
+        extended: {notes: [{...note, private: true}]},
+      }),
+      apiPut,
+    })
+    view._toggleEditMode()
+
+    await view._handleSave()
+    await view._handleSave()
+
+    expect(apiPut.mock.calls.map(([url]) => url)).toEqual([
+      '/api/sources/source-handle',
+      '/api/notes/note-handle',
+      '/api/sources/source-handle',
+      '/api/notes/note-handle',
+    ])
+    expect(apiPut.mock.calls[3][1].private).toBe(false)
+  })
+
+  it('keeps the form from changing while saving', async () => {
+    let resolvePut
+    const apiPut = vi.fn(
+      () =>
+        new Promise(resolve => {
+          resolvePut = resolve
+        })
+    )
+    const view = makeView({apiPut})
+    view._toggleEditMode()
+
+    const saving = view._handleSave()
+    await vi.waitFor(() => expect(apiPut).toHaveBeenCalled())
+    expect(view._form.inert).toBe(true)
+
+    resolvePut({data: []})
+    await saving
+    expect(view._form.inert).toBe(false)
+  })
+})
+
+describe('blog post page: loading', () => {
+  it('loads only a source with the Blog tag', async () => {
+    const view = makeView()
+    view.appState.apiGet = vi.fn().mockResolvedValue({data: []})
+
+    await view._fetchData()
+
+    const url = decodeURIComponent(view.appState.apiGet.mock.calls[0][0])
+    expect(url).toContain(
+      '{"rules":[{"name":"HasIdOf","values":["S1"]},{"name":"HasTag","values":["Blog"]}]}'
+    )
+    expect(view._dataSources).toEqual([])
+  })
+})
+
 describe('blog post page: deleting', () => {
   beforeEach(() => {
     clearDraftsWithPrefix.mockClear()
